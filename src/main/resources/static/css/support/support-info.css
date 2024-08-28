@@ -1,0 +1,131 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f9f9f9;
+}
+
+header {
+    background-color: #333;
+    color: #fff;
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#logo {
+    font-size: 1.5em;
+}
+
+#user-info {
+    text-align: right;
+    display: flex;
+    align-items: center;
+}
+
+#user-info a {
+    color: #ff8c00;
+    text-decoration: none;
+    margin: 0 10px;
+    transition: color 0.3s;
+}
+
+#user-info a:hover {
+    color: #fff;
+}
+
+nav {
+    background-color: #fff;
+    padding: 10px;
+    text-align: center;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    margin: 10px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+nav a {
+    color: #333;
+    text-decoration: none;
+    margin: 0 10px;
+    transition: color 0.3s;
+}
+
+nav a:hover {
+    color: #ff8c00;
+}
+
+.body {
+    max-width: 1000px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+H1 {
+    margin-top: 20px;
+    color: #007bff;
+}
+
+H4 {
+    color: #333;
+}
+
+.img {
+    margin: 0 auto;
+    max-width: 100%;
+    margin-top: 20px;
+}
+
+.text {
+    color: #007bff;
+    margin: 5px 0;
+    font-size: 24px;
+}
+
+form {
+    margin-top: 20px;
+}
+
+input[type="text"],
+select,
+textarea {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+input[type="submit"] {
+    background-color: #ff8c00;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+input[type="submit"]:hover {
+    background-color: #d17a00;
+}
+
+.dropdown option {
+    font-size: 12px;
+}
+
+form .dropdown option {
+    font-size: 12px;
+}
+
+form .dropdown {
+    width: 10%;
+    padding: 8px;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+}
