@@ -72,6 +72,6 @@ public class AuthController {
 
     @RequestMapping(value = "/", method = RequestMethod.GET)
     public String home(){
-        return "home";
+        return "index";
     }
 }

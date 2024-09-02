@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ресторан</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="/jsTest/styles.css">
+</head>
+<body>
+<header>
+    <h1>Название ресторана</h1>
+    <div class="user-controls">
+        <a href="#login">Вход</a>
+        <div class="cart-icon" onclick="toggleCart()">
+            <img src="/jsTest/free-icon-shopping-cart-3225209.png" alt="Cart">
+            <span class="cart-count">0</span>
+        </div>
+    </div>
+</header>
+
+<section id="menu">
+    <div class="categories">
+        <button class="category-btn active category" data-category="dishes">Основные блюда</button>
+        <button class="category-btn category" data-category="product">Товары</button>
+        <button class="category-btn category" data-category="dessert">Десерты</button>
+        <button class="category-btn category" data-category="drink">Напитки</button>
+    </div>
+
+    <div class="container">
+        <h1>Menu</h1>
+        <div class="row">
+            <div class="col-md-8">
+                <div id="products" class="row"></div>
+                <div id="dishes" class="row"> </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<div id="cart-modal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="toggleCart()">&times;</span>
+        <h2>Корзина</h2>
+        <div id="cart-items"></div>
+        <div class="total-price-container">
+            <span class="total-price">0.00</span>
+        </div>
+        <button class="checkout-btn">Оформить заказ</button>
+    </div>
+</div>
+
+
+<footer>
+    <p>&copy; 2024 Название ресторана. Все права защищены.</p>
+</footer>
+
+<script src="/jsTest/home.js"></script>
+<script src="/jsTest/script.js"></script>
+</body>
+</html>
