@@ -1,5 +1,6 @@
 HELP.md
 target/
+/WebCoffee-main/**
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
@@ -28,6 +29,8 @@ target/
 build/
 !**/src/main/**/build/
 !**/src/test/**/build/
+/src/main/resources/static/scss
+/src/main/resources/static/jsTest
 
 ### VS Code ###
 .vscode/
