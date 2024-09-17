@@ -8,8 +8,10 @@ import org.example.server.models.products.DishModifier;
 import org.example.server.models.products.DishWithModifiers;
 import org.example.server.models.products.Product;
 import org.example.server.repositories.DishModifierRepository;
+import org.example.server.repositories.DishRepository;
 import org.example.server.repositories.ModifierRepository;
 import org.example.server.service.ProductService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -119,24 +121,6 @@ public class TokenController {
     }
 
 
-    @RequestMapping(value = "/viewProducts", method = RequestMethod.GET)
-    public String getMenu(Model model){
-
-        List<Product> products = productService.listProduct();
-        List<DishWithModifiers> dishesWithModifiers = new ArrayList<>();
-
-        List<Dish> dishes = productService.listDish();
-        for (Dish dish : dishes) {
-            List<DishModifier> dishModifiers = dishModifierRepository.findByDishId(dish.getId());
-            DishWithModifiers dishWithModifiers = new DishWithModifiers(dish, dishModifiers);
-            dishesWithModifiers.add(dishWithModifiers);
-        }
-
-        model.addAttribute("products", products);
-        model.addAttribute("dishes", dishesWithModifiers);
-        return "test/rest";
-    }
-
     @GetMapping("/api/menu")
     @ResponseBody
     public Map<String, Object> getMenuApi() {
@@ -156,4 +140,16 @@ public class TokenController {
         return result;
     }
 
+    @RestController
+    @RequestMapping("/api/dishes")
+    public class DishController {
+
+        @Autowired
+        private DishRepository dishRepository;
+
+        @GetMapping
+        public List<Dish> getAllDishes() {
+            return dishRepository.findAll();
+        }
+    }
 }

@@ -22,8 +22,9 @@ public class Modifier {
     @Column(name = "NAME")
     private String name;
 
-    @Column(name = "GROUPID")
-    private String groupId;
+    @ManyToOne
+    @JoinColumn(name = "id_group")
+    private Groups groupId;
 
     @Column(name = "CODE")
     private String code;
@@ -31,7 +32,7 @@ public class Modifier {
     @Column(name = "CURRENTPRICE")
     private Double currentPrice;
 
-    public Modifier(String productId, String name, String groupId, String code, Double currentPrice){
+    public Modifier(String productId, String name, Groups groupId, String code, Double currentPrice) {
         this.productId = productId;
         this.name = name;
         this.groupId = groupId;

@@ -22,13 +22,15 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                .csrf().disable()  // Отключение CSRF защиты
                 .authorizeHttpRequests()
-                .requestMatchers("/login","/register", "/home/**", "/js/**","/jsTest/**", "/css/**", "/fonts.flaticon/**", "/images/**", "/scss/**").permitAll()
+                .requestMatchers("/login","/register", "/home/**", "/js/**","/jsTest/**", "/css/**", "/fonts.flaticon/**", "/images/**", "/scss/**", "/jsProduct").permitAll()
                 .anyRequest().authenticated();
+
         http
                 .formLogin()
                 .loginPage("/login")
-                .defaultSuccessUrl("/");
+                .defaultSuccessUrl("/viewProducts");
 
         return http.build();
     }

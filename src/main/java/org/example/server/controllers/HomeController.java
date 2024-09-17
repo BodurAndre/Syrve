@@ -34,4 +34,9 @@ public class HomeController {
     public String home(){
         return "test/home";
     }
+
+    @RequestMapping(value = "/cards", method = RequestMethod.GET)
+    public String cards(){
+        return "test/cards";
+    }
 }

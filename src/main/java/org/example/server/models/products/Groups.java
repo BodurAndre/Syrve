@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "'GROUPS'")
+@Table(name = "FOLDER")
 public class Groups {
 
     @Id
@@ -17,7 +17,7 @@ public class Groups {
     @GeneratedValue(strategy= GenerationType.IDENTITY)
     private Long id;
 
-    @Column (name = "id_group")
+    @Column(name = "id_group")
     private String idGroup;
 
     @Column(name = "parent_Group")

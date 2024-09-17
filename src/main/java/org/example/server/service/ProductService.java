@@ -36,36 +36,36 @@ public class ProductService {
 
     @Transactional
     public void saveProductsFromJson(String json) throws JsonProcessingException {
+        clearExistingData();
         JsonNode rootNode = objectMapper.readTree(json);
         JsonNode productsNode = rootNode.get("groups");
 
+        Map<String,Groups> groupsMap = new HashMap<>();
 
         productsNode.forEach(productNode -> {
             Groups groups = createGroups(productNode);
+            groupsMap.put(groups.getIdGroup(), groups);
             groupsRepository.save(groups);
         });
 
-
         Map<String, Dish> dishMap = new HashMap<>();
         Map<String, Modifier> modifierMap = new HashMap<>();
-
         productsNode = rootNode.get("products");
-        clearExistingData();
 
         productsNode.forEach(productNode -> {
             String type = productNode.get("type").asText();
             switch (type) {
                 case "Modifier":
-                    Modifier modifier = createModifier(productNode);
+                    Modifier modifier = createModifier(productNode, groupsMap);
                     modifierMap.put(modifier.getProductId(), modifier);
                     modifierRepository.save(modifier);
                     break;
                 case "Good":
-                    Product product = createProduct(productNode);
+                    Product product = createProduct(productNode, groupsMap);
                     productRepository.save(product);
                     break;
                 case "Dish":
-                    Dish dish = createDish(productNode);
+                    Dish dish = createDish(productNode, groupsMap);
                     dishMap.put(dish.getProductId(), dish);
                     dishRepository.save(dish);
                     break;
@@ -92,6 +92,9 @@ public class ProductService {
 
         productRepository.deleteAllProducts();
         productRepository.resetProductAutoIncrement();
+
+        groupsRepository.deleteAllProducts();
+        groupsRepository.resetProductAutoIncrement();
     }
 
     private Groups createGroups(JsonNode productNode) {
@@ -105,21 +108,30 @@ public class ProductService {
         );
     }
 
-    private Modifier createModifier(JsonNode productNode) {
+    private Groups getGroupById(String groupId, Map<String, Groups> groupsMap) {
+        return groupsMap.get(groupId);
+    }
+
+    private Modifier createModifier(JsonNode productNode, Map<String, Groups> groupsMap) {
+        String groupId = productNode.get("parentGroup").asText();
+        Groups group = getGroupById(groupId, groupsMap);
+
         return new Modifier(
                 productNode.get("id").asText(),
                 productNode.get("name").asText(),
-                productNode.get("groupId").asText(),
+                group, // Используем объект Groups вместо groupId
                 productNode.get("code").asText(),
                 productNode.get("sizePrices").get(0).get("price").get("currentPrice").asDouble()
         );
     }
 
-    private Product createProduct(JsonNode productNode) {
+    private Product createProduct(JsonNode productNode, Map<String, Groups> groupsMap) {
+        String groupId = productNode.get("parentGroup").asText();
+        Groups group = getGroupById(groupId, groupsMap);
         return new Product(
                 productNode.get("id").asText(),
                 productNode.get("name").asText(),
-                productNode.get("groupId").asText(),
+                group,
                 productNode.get("code").asText(),
                 productNode.get("measureUnit").asText(),
                 productNode.get("sizePrices").get(0).get("price").get("currentPrice").asDouble(),
@@ -127,17 +139,37 @@ public class ProductService {
         );
     }
 
-    private Dish createDish(JsonNode productNode) {
+    private Dish createDish(JsonNode productNode, Map<String, Groups> groupsMap) {
+        // Получаем ID группы и саму группу
+        String groupId = productNode.get("parentGroup").asText();
+        Groups group = getGroupById(groupId, groupsMap);
+
+        // Получаем массив ссылок на изображения
+        JsonNode imageLinksNode = productNode.get("imageLinks");
+
+        // Инициализируем переменную для хранения первой ссылки на изображение
+        String firstImageLink = "";
+
+        // Проверяем, что imageLinksNode не пустой и это массив
+        if (imageLinksNode != null && imageLinksNode.isArray() && imageLinksNode.size() > 0) {
+            // Получаем первую ссылку из массива
+            firstImageLink = imageLinksNode.get(0).asText();
+        }
+
+        // Создаем объект Dish с извлеченными данными
         return new Dish(
                 productNode.get("id").asText(),
                 productNode.get("name").asText(),
-                productNode.get("groupId").asText(),
+                group,
                 productNode.get("code").asText(),
                 productNode.get("sizePrices").get(0).get("price").get("currentPrice").asDouble(),
                 productNode.get("sizePrices").get(0).get("price").get("isIncludedInMenu").asBoolean(),
-                productNode.get("measureUnit").asText()
+                productNode.get("measureUnit").asText(),
+                Math.floor(productNode.get("weight").asDouble() * 1000),
+                firstImageLink
         );
     }
+
 
     private void saveDishModifiers(JsonNode productNode, Dish dish, Map<String, Modifier> modifierMap, Map<String, Dish> dishMap) {
         saveGroupModifiers(productNode.get("groupModifiers"), dish, modifierMap, dishMap);

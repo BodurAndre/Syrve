@@ -20,8 +20,9 @@ public class Product {
     @Column(name = "NAME")
     private String name;
 
-    @Column(name = "GROUPID")
-    private String groupId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_Group")
+    private Groups groupId;
 
     @Column(name = "CODE")
     private String code;
@@ -35,7 +36,7 @@ public class Product {
     @Column(name = "ISINCLUDEDMENU")
     private Boolean isIncludedMenu;
 
-    public Product(String id, String name, String groupId, String code, String measureUnit, Double price, Boolean isIncludedMenu) {
+    public Product(String id, String name, Groups groupId, String code, String measureUnit, Double price, Boolean isIncludedMenu) {
         this.idProducts = id;
         this.name = name;
         this.groupId = groupId;

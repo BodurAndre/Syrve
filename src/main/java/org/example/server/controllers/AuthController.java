@@ -1,6 +1,5 @@
 package org.example.server.controllers;
 
-import jakarta.servlet.http.HttpServletResponse;
 import org.example.server.models.User;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
