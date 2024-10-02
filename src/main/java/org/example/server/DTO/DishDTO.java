@@ -8,6 +8,7 @@ public class DishDTO {
     private String id;
     private String name;
     private Double price;
+    private String groupName;
     private Boolean isIncludedMenu;
     private Double weight;
     private List<ModifierGroupDTO> modifierGroups;

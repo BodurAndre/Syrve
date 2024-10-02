@@ -4,11 +4,13 @@ import ch.qos.logback.core.model.Model;
 import org.example.server.DTO.DishDTO;
 import org.example.server.DTO.ModifierDTO;
 import org.example.server.DTO.ModifierGroupDTO;
+import org.example.server.DTO.ProductDTO;
 import org.example.server.models.products.DishModifier;
 import org.example.server.models.products.Groups;
 import org.example.server.models.products.Modifier;
 import org.example.server.repositories.DishModifierRepository;
 import org.example.server.repositories.DishRepository;
+import org.example.server.repositories.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,7 +23,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/dishes")
+@RequestMapping("/menu")
 public class DishController {
 
     @Autowired
@@ -30,7 +32,10 @@ public class DishController {
     @Autowired
     private DishModifierRepository dishModifierRepository;
 
-    @GetMapping("/modifiers")
+    @Autowired
+    private ProductRepository productRepository;
+
+    @GetMapping("/dishes")
     public ResponseEntity<List<DishDTO>> getAllDishesWithModifiers() {
         List<DishDTO> dishDTOs = dishRepository.findAll().stream()
                 .map(dish -> {
@@ -42,6 +47,7 @@ public class DishController {
                     dishDTO.setWeight(dish.getWeight());
                     dishDTO.setImageLinks(dish.getImageLinks());
                     dishDTO.setCode(dish.getCode());
+                    if (dish.getGroupId() != null) dishDTO.setGroupName(dish.getGroupId().getName());
 
                     // Группировка модификаторов по их группам
                     Map<Groups, List<DishModifier>> groupedModifiers = dishModifierRepository.findByDish(dish).stream()
@@ -122,6 +128,26 @@ public class DishController {
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(dishDTOs);
+    }
+
+    @GetMapping("/products")
+    public ResponseEntity<List<ProductDTO>> getAllProducts() {
+        List<ProductDTO> productDTOs = productRepository.findAll().stream()
+                .map(product -> {
+                    ProductDTO productDTO = new ProductDTO();
+                    productDTO.setId(product.getIdProducts());
+                    productDTO.setName(product.getName());
+                    productDTO.setCode(product.getCode());
+                    productDTO.setWeight(product.getMeasureUnit());
+                    productDTO.setPrice(product.getPrice());
+                    productDTO.setImageLinks(product.getImageLinks());
+                    productDTO.setIsIncludedMenu(product.getIsIncludedMenu());
+                    if (product.getGroupId() != null) productDTO.setGroupName(product.getGroupId().getName());
+
+                    return productDTO;
+                })
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(productDTOs);
     }
 
 

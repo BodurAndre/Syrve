@@ -22,7 +22,7 @@ public class Dish {
     @Column(name = "NAME")
     private String name;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "parent_Group")
     private Groups groupId;
 

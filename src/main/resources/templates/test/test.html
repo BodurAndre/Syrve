@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dishes</title>
     <link rel="stylesheet" href="jsTest/test.css">
+    <link rel="stylesheet" href="css/cart.css">
 </head>
 <body>
 <div class="product-grid" id="dishesContainer">
@@ -12,7 +13,11 @@
 </div>
 
 <!-- Кнопка корзины -->
-<button id="cartButton">Корзина (<span id="cartCount">0</span>)</button>
+
+<div id="cartButton" class="cart-icon">
+    <img src="images/shopping-cart.png" alt="Cart">
+    <span id="cartCount" class="cart-count">0</span>
+</div>
 
 <!-- Модальное окно для отображения блюда -->
 <div id="modal" class="modal">

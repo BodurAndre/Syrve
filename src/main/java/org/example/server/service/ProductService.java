@@ -128,6 +128,19 @@ public class ProductService {
     private Product createProduct(JsonNode productNode, Map<String, Groups> groupsMap) {
         String groupId = productNode.get("parentGroup").asText();
         Groups group = getGroupById(groupId, groupsMap);
+
+        // Получаем массив ссылок на изображения
+        JsonNode imageLinksNode = productNode.get("imageLinks");
+
+        // Инициализируем переменную для хранения первой ссылки на изображение
+        String firstImageLink = "";
+
+        // Проверяем, что imageLinksNode не пустой и это массив
+        if (imageLinksNode != null && imageLinksNode.isArray() && imageLinksNode.size() > 0) {
+            // Получаем первую ссылку из массива
+            firstImageLink = imageLinksNode.get(0).asText();
+        }
+
         return new Product(
                 productNode.get("id").asText(),
                 productNode.get("name").asText(),
@@ -135,7 +148,8 @@ public class ProductService {
                 productNode.get("code").asText(),
                 productNode.get("measureUnit").asText(),
                 productNode.get("sizePrices").get(0).get("price").get("currentPrice").asDouble(),
-                productNode.get("sizePrices").get(0).get("price").get("isIncludedInMenu").asBoolean()
+                productNode.get("sizePrices").get(0).get("price").get("isIncludedInMenu").asBoolean(),
+                firstImageLink
         );
     }
 
