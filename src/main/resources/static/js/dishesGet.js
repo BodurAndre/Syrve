@@ -1,0 +1,526 @@
+let cart = [];
+
+document.addEventListener("DOMContentLoaded", function () {
+    // Два запроса одновременно
+    Promise.all([
+        fetch('/menu/dishes').then(response => response.json()), // Первый запрос
+        fetch('/menu/products').then(response => response.json()) // Второй запрос
+    ])
+        .then(([dishes, products]) => {  // Данные от обоих запросов
+            displayDishes(dishes); // Передача данных в функцию
+            displayProducts(products);
+        })
+        .catch(error => console.error('Error:', error));
+});
+
+const modal = document.getElementById("modal");
+const cartModal = document.getElementById("cartModal");
+const closeButtons = document.querySelectorAll(".close-button"); // Select all close buttons
+const modalBody = document.querySelector(".modal-body");
+const cartButton = document.getElementById("cartButton");
+const cartCount = document.getElementById("cartCount");
+const cartItems = document.getElementById("cartItems");
+const totalPriceElement = document.getElementById("totalPrice");
+
+// Attach event listeners to all close buttons to close modals
+closeButtons.forEach(button => {
+    button.addEventListener('click', closeModal);
+});
+
+// Function to close modals
+function closeModal() {
+    modal.style.display = "none";
+    cartModal.style.display = "none";
+}
+
+// Function to open the dish modal
+function openModal(dish) {
+    if (!dish) {
+        console.error("Блюдо не найдено.");
+        return;
+    }
+
+    // Безопасные вызовы map
+    const modifierGroupsHtml = Array.isArray(dish.modifierGroups)
+        ? dish.modifierGroups.map(group => `
+            <h4>${group.name} (max = ${group.maxQuantity})</h4>
+            ${group.modifiers.map(modifier => `
+                <div class="product-description">
+                    <label>${modifier.name}:</label>
+                    <input type="number" 
+                           value="${modifier.defaultQuantity}" 
+                           min="${modifier.minQuantity}" 
+                           max="${group.maxQuantity}" 
+                           data-modifier-id="${modifier.id}" 
+                           data-group-id="${group.name}"
+                           class="modifier-input">
+                    <span>Price: ${modifier.currentPrice} MDL | Free: ${modifier.freeOfChargeAmount}</span>
+                </div>
+            `).join('')}
+        `).join('')
+        : '';
+
+    const individualModifiersHtml = Array.isArray(dish.modifiers)
+        ? dish.modifiers.map(modifier => `
+            <div class="product-description">
+                <label>${modifier.name}:</label>
+                <input type="number" 
+                       value="${modifier.defaultQuantity}" 
+                       min="${modifier.minQuantity}" 
+                       max="${modifier.maxQuantity}" 
+                       data-modifier-id="${modifier.id}" 
+                       class="modifier-input">
+                <span>Price: ${modifier.currentPrice} MDL | Free: ${modifier.freeOfChargeAmount}</span>
+            </div>
+        `).join('')
+        : '';
+
+    modalBody.innerHTML = `
+        <img src="${dish.imageLinks}" alt="${dish.name}" class="product-image">
+        <div class="modal-text">
+            <h3 class="product-title">${dish.name}</h3>
+            <p class="product-weight">${dish.weight} gr</p>
+            <div class="modifiers-section">
+                ${modifierGroupsHtml}
+                <br>
+                ${individualModifiersHtml}
+            </div>
+            <div class="product-footer">
+                <span id="finalPrice">${dish.price} MDL</span>
+                <button id="addToCartButton" class="add-to-cart">Добавить в корзину</button>
+            </div>
+        </div>
+    `;
+
+    modal.style.display = "block";
+
+    const inputs = document.querySelectorAll('.modifier-input');
+    const finalPriceElement = document.getElementById('finalPrice');
+    let finalPrice = parseFloat(dish.price);
+
+    // Update price when modifier quantity changes
+    inputs.forEach(input => {
+        input.addEventListener('input', (event) => {
+            let group = dish.modifierGroups.find(g => g.name === input.dataset['groupId']);
+            let totalQuantity = 0;
+
+            if (group) {
+                inputs.forEach(i => {
+                    if (group.modifiers.some(m => m.id == i.dataset['modifierId'])) {
+                        totalQuantity += parseInt(i.value);
+                    }
+                });
+
+                if (totalQuantity > group.maxQuantity) {
+                    event.target.value = group.maxQuantity - (totalQuantity - parseInt(event.target.value));
+                }
+            }
+
+            updateFinalPrice();
+        });
+    });
+
+    function updateFinalPrice() {
+        finalPrice = parseFloat(dish.price);
+        inputs.forEach(input => {
+            const modifier = dish.modifiers.concat(...dish.modifierGroups.map(g => g.modifiers)).find(m => m.id == input.dataset['modifierId']);
+            if (modifier) {
+                const quantity = parseInt(input.value);
+                if (quantity > modifier.freeOfChargeAmount) {
+                    finalPrice += (quantity - modifier.freeOfChargeAmount) * modifier.currentPrice;
+                }
+            }
+        });
+        finalPriceElement.textContent = `${finalPrice.toFixed(2)} MDL`;
+    }
+
+    const addToCartButton = document.getElementById('addToCartButton');
+    if (!addToCartButton) {
+        console.error('Элемент с id "addToCartButton" не найден');
+        return;
+    }
+
+    addToCartButton.addEventListener('click', () => {
+        const selectedModifiers = [];
+        inputs.forEach(input => {
+            if (parseInt(input.value) > 0) {
+                const quantity = parseInt(input.value);
+                const modifier = dish.modifiers.concat(...dish.modifierGroups.map(g => g.modifiers))
+                    .find(m => m.id == input.dataset['modifierId']);
+
+                if (modifier) {
+                    const baseModifier = {
+                        id: modifier.id,
+                        name: modifier.name,
+                        quantity: quantity,
+                        amount: 1,
+                        price: modifier.currentPrice,
+                        totalPrice: Math.abs((quantity - modifier.freeOfChargeAmount) * modifier.currentPrice),
+                    };
+
+                    if (dish.modifierGroups != null) {
+                        selectedModifiers.push({
+                            ...baseModifier,
+                            isGroup: true,
+                            groupName: modifier.nameGroup,
+                            groupId: modifier.idGroup
+                        });
+                    } else {
+                        selectedModifiers.push(baseModifier);
+                    }
+                } else {
+                    console.error(`Модификатор с id ${input.dataset['modifierId']} не найден`);
+                }
+            }
+        });
+
+        const existingDishIndex = cart.findIndex(item => item.dish.name === dish.name);
+        if (existingDishIndex > -1) {
+            const existingDish = cart[existingDishIndex];
+            selectedModifiers.forEach(modifier => {
+                const existingModifier = existingDish.modifiers.find(m => m.id === modifier.id);
+                if (existingModifier) {
+                    existingModifier.quantity += modifier.quantity;
+                    existingModifier.totalPrice += modifier.totalPrice;
+                } else {
+                    existingDish.modifiers.push(modifier);
+                }
+            });
+            existingDish.finalPrice = finalPrice;
+        } else {
+            cart.push({
+                dish: dish,
+                modifiers: selectedModifiers,
+                finalPrice: finalPrice
+            });
+        }
+
+        if (cartCount) {
+            cartCount.textContent = cart.length;
+        }
+        closeModal();
+    });
+}
+
+
+function displayDishes(dishes) {
+    const groups = {};
+
+    console.log(dishes);
+
+    // Separate dishes by groups
+    dishes.forEach(dish => {
+        if (dish.isIncludedMenu) {
+            if (!groups[dish.groupName]) {
+                groups[dish.groupName] = [];
+            }
+            groups[dish.groupName].push(dish);
+        }
+    });
+
+    // Create HTML for each group
+    for (const [groupName, groupDishes] of Object.entries(groups)) {
+        const groupElement = document.createElement('div');
+        groupElement.classList.add('col-md-6', 'col-lg-4');
+
+        let groupHtml = `
+            <div class="menu-wrap">
+                <div class="heading-menu text-center ftco-animate fadeInUp ftco-animated">
+                    <h3>${groupName}</h3>
+                </div>
+        `;
+
+        groupDishes.forEach(dish => {
+            groupHtml += `
+                <div class="menus border-bottom-0 d-flex ftco-animate fadeInUp ftco-animated">
+                    <div 
+                        class="menu-img img" 
+                        style="background-image: url(${dish.imageLinks});" 
+                        data-dish-id="${dish.id}"
+                        title="${dish.name}" 
+                        style="cursor: pointer;"
+                    ></div>
+                    <div class="text">
+                        <div class="d-flex">
+                            <div class="one-half view-modal" data-dish-id="${dish.id}" title="${dish.name}" style="cursor: pointer;">
+                                <h3>${dish.name}</h3>
+                            </div>
+                            <div class="one-forth">
+                                <span class="price">${dish.price} MDL</span>
+                            </div>
+                        </div>
+                        <p><span>${dish.weight} gr</span></p>
+                    </div>
+                </div>
+                <span class="flat flaticon-bread" style="left: 0;"></span>
+                <span class="flat flaticon-breakfast" style="right: 0;"></span>
+            `;
+        });
+
+        groupHtml += '</div>';
+        groupElement.innerHTML = groupHtml;
+
+        dishesContainer.appendChild(groupElement);
+
+        // Attach click event listeners to both image and name divs
+        const clickableElements = groupElement.querySelectorAll('.menu-img.img, .view-modal');
+
+        clickableElements.forEach(clickableElement => {
+            clickableElement.addEventListener('click', () => {
+                const dishId = clickableElement.dataset.dishId;
+                const dish = groupDishes.find(d => d.id === dishId);
+                if (dish) {
+                    openModal(dish);
+                } else {
+                    console.error(`Dish with ID ${dishId} not found.`);
+                }
+            });
+        });
+    }
+
+}
+
+
+function displayProducts(dishes) {
+    const groups = {};
+
+    console.log(dishes);
+
+    // Separate dishes by groups
+    dishes.forEach(dish => {
+        if (dish.isIncludedMenu) {
+            if (!groups[dish.groupName]) {
+                groups[dish.groupName] = [];
+            }
+            groups[dish.groupName].push(dish);
+        }
+    });
+
+    // Create HTML for each group
+    for (const [groupName, groupDishes] of Object.entries(groups)) {
+        const groupElement = document.createElement('div');
+        groupElement.classList.add('col-md-6', 'col-lg-4');
+
+        let groupHtml = `
+            <div class="menu-wrap">
+                <div class="heading-menu text-center ftco-animate fadeInUp ftco-animated">
+                    <h3>${groupName}</h3>
+                </div>
+        `;
+
+        groupDishes.forEach(dish => {
+            groupHtml += `
+                <div class="menus border-bottom-0 d-flex ftco-animate fadeInUp ftco-animated">
+                    <div 
+                        class="menu-img img" 
+                        style="background-image: url(${dish.imageLinks});" 
+                        data-dish-id="${dish.id}"
+                        title="${dish.name}" 
+                        style="cursor: pointer;"
+                    ></div>
+                    <div class="text">
+                        <div class="d-flex">
+                            <div class="one-half view-modal" data-dish-id="${dish.id}" title="${dish.name}" style="cursor: pointer;">
+                                <h3>${dish.name}</h3>
+                            </div>
+                            <div class="one-forth">
+                                <span class="price">${dish.price} MDL</span>
+                            </div>
+                        </div>
+                        <p><span>${dish.weight} gr</span></p>
+                    </div>
+                </div>
+                <span class="flat flaticon-bread" style="left: 0;"></span>
+                <span class="flat flaticon-breakfast" style="right: 0;"></span>
+            `;
+        });
+
+        groupHtml += '</div>';
+        groupElement.innerHTML = groupHtml;
+
+        dishesContainer.appendChild(groupElement);
+
+        // Attach click event listeners to both image and name divs
+        const clickableElements = groupElement.querySelectorAll('.menu-img.img, .view-modal');
+
+        clickableElements.forEach(clickableElement => {
+            clickableElement.addEventListener('click', () => {
+                const dishId = clickableElement.dataset.dishId;
+                const dish = groupDishes.find(d => d.id === dishId);
+                if (dish) {
+                    openModal(dish);
+                } else {
+                    console.error(`Dish with ID ${dishId} not found.`);
+                }
+            });
+        });
+    }
+}
+
+
+
+cartButton.addEventListener('click', () => {
+    console.log('Нажатие кнопки.');
+    displayCart(); // Убедитесь, что эта функция вызывается
+    cartModal.style.display = "block";
+});
+
+// Display cart content
+function displayCart() {
+    if (!cartItems || !cartCount || !totalPriceElement) {
+        console.error('Не найдены необходимые элементы для отображения корзины.');
+        return;
+    }
+    console.log('Найдены необходимые элементы для отображения корзины.');
+    cartItems.innerHTML = '';
+    let totalPrice = 0;
+
+    if (cart.length === 0) {
+        cartItems.innerHTML = '<p>Ваша корзина пуста.</p>';
+        totalPriceElement.textContent = 'Общая сумма: 0 MDL';
+        return;
+    }
+
+    cart.forEach((item, index) => {
+        const itemElement = document.createElement('li');
+        itemElement.innerHTML = `
+            <img src="${item.dish.imageLinks}" alt="${item.dish.name}" class="product-image">
+            <div class="modal-text">
+                <h3 class="product-title">${item.dish.name}</h3>
+                <p class="product-weight">${item.dish.weight} gr</p>
+                <div class="modifiers-section">
+                    ${item.modifiers.map(mod => `
+                        <div class="product-description">
+                            <label>${mod.name}:</label>
+                            <span>${mod.quantity}</span>
+                            <span>Price: ${mod.totalPrice.toFixed(2)} MDL</span>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="product-footer">
+                    <strong>Итоговая цена: ${item.finalPrice.toFixed(2)} MDL</strong>
+                    <button class="remove-button" data-index="${index}">Удалить</button>
+                </div>
+            </div>  
+        `;
+        cartItems.appendChild(itemElement);
+        totalPrice += item.finalPrice;
+    });
+
+    totalPriceElement.textContent = `Общая сумма: ${totalPrice.toFixed(2)} MDL`;
+
+    // Add event listeners for "Remove" buttons
+    const inputs = document.querySelectorAll('.modifier-input-cart');
+    inputs.forEach(input => {
+        input.addEventListener('input', (event) => {
+            const itemIndex = event.target.closest('.product-footer').querySelector('.remove-button').dataset.index;
+            const cartItem = cart[itemIndex];
+            const modifier = cartItem.modifiers.find(m => m.id == input.dataset.modifierId);
+            if (modifier) {
+                let newQuantity = parseInt(input.value);
+                if (newQuantity < modifier.minQuantity) newQuantity = modifier.minQuantity;
+                if (newQuantity > modifier.maxQuantity) newQuantity = modifier.maxQuantity;
+
+                modifier.quantity = newQuantity;
+                modifier.totalPrice = (newQuantity - modifier.freeOfChargeAmount) * modifier.price;
+                input.nextElementSibling.textContent = `Price: ${modifier.quantity} x ${modifier.price} MDL = ${modifier.totalPrice.toFixed(2)} MDL`;
+
+                updateFinalPriceInCart(cartItem);
+            }
+        });
+    });
+
+    // Add event listeners for "Remove" buttons
+    const removeButtons = document.querySelectorAll('.remove-button');
+    removeButtons.forEach(button => {
+        button.addEventListener('click', (event) => {
+            const index = event.target.dataset.index;
+            cart.splice(index, 1);  // Remove the item from the cart
+            cartCount.textContent = cart.length;  // Update cart count
+            displayCart();  // Re-render the cart
+        });
+    });
+}
+
+
+// Update final price in cart
+function updateFinalPriceInCart(cartItem) {
+    let finalPrice = parseFloat(cartItem.dish.price);
+    cartItem.modifiers.forEach(modifier => {
+        if (modifier.quantity > modifier.freeOfChargeAmount) {
+            finalPrice += (modifier.quantity - modifier.freeOfChargeAmount) * modifier.price;
+        }
+    });
+    cartItem.finalPrice = finalPrice;
+    displayCart();
+}
+
+// Close modal on outside click
+window.addEventListener("click", (event) => {
+    if (event.target === cartModal || event.target === modal) {
+        closeModal();
+    }
+});
+
+// "Checkout" Button
+const checkoutButton = document.getElementById('checkoutButton');
+
+checkoutButton.addEventListener('click', () => {
+    console.log(cart);
+    const formattedCart = cart.map(item => {
+        // Base dish object
+        const formattedItem = {
+            id: item.dish.id,  // Unique dish id
+            name: item.dish.name,  // Dish name
+            amount: item.dish.amount,  // Dish quantity
+            code: item.dish.code // Product code
+        };
+
+        // If there are modifiers, add them
+        if (item.modifiers.length > 0) {
+            formattedItem.modifiers = item.modifiers.map(mod => {
+                // Check if the modifier is part of a group
+                if (mod.groupId && mod.groupName) {
+                    return {
+                        id: mod.id,
+                        name: mod.name,
+                        amount: mod.quantity,
+                        groupId: mod.groupId,  // Modifier group ID (if any)
+                        groupName: mod.groupName // Modifier group name (if any)
+                    };
+                } else {
+                    return {
+                        id: mod.id,
+                        name: mod.name,
+                        amount: mod.quantity
+                    };
+                }
+            });
+        }
+
+        return formattedItem;
+    });
+
+    // Log data for verification
+    console.log("Formatted Cart:", JSON.stringify(formattedCart, null, 2));
+
+    fetch('/ordering', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formattedCart)
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            console.log('Order successfully submitted!');
+            console.log(formattedCart);
+            // Redirect to /order page after successful response
+            window.location.href = '/order';
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+});

@@ -6,6 +6,8 @@
     <title>Вход</title>
 </head>
 <body>
-    Ошибка
+<#if Error??>
+    <p>Ошибка: ${Error}</p>
+</#if>
 </body>
 </html>

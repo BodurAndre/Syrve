@@ -1,6 +1,5 @@
 package org.example.server.controllers;
 
-import ch.qos.logback.core.model.Model;
 import org.example.server.DTO.DishDTO;
 import org.example.server.DTO.ModifierDTO;
 import org.example.server.DTO.ModifierGroupDTO;
@@ -17,7 +16,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -149,6 +147,4 @@ public class DishController {
                 .collect(Collectors.toList());
         return ResponseEntity.ok(productDTOs);
     }
-
-
 }

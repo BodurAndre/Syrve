@@ -1,0 +1,169 @@
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.5);
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+.modal-content {
+    background-color: #fff;
+    margin: 3% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 85%;
+    max-width: 700px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    animation: slideIn 0.5s ease-in-out;
+    position: relative;
+}
+
+.modal-body {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.modal-body img {
+    max-width: 40%;
+    border-radius: 10px;
+    margin-right: 20px;
+}
+
+.modal-text {
+    flex: 1;
+    text-align: left;
+}
+
+.product-title {
+    font-size: 1.7em;
+    font-weight: bold;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.product-description,
+.product-weight {
+    margin-bottom: 10px;
+    text-align: left;
+}
+
+.product-price {
+    display: inline-block;
+    margin-right: 20px;
+    font-size: 1.2em;
+}
+
+.add-to-cart {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #ff4500;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: right;
+}
+
+.add-to-cart:hover {
+    background-color: #ff6347;
+}
+
+.close-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    color: #aaa;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: #000;
+    text-decoration: none;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from { transform: translateY(-50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* Стили для отображения корзины */
+#cartItems {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+#cartItems li {
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #ddd;
+}
+
+#totalPrice {
+    font-weight: bold;
+    font-size: 1.4em;
+    color: #333;
+    text-align: right;
+    margin-top: 20px;
+}
+
+/* Стили для кнопки оформления заказа */
+#checkoutButton {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    text-align: center;
+    font-size: 16px;
+    margin-top: 20px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+#checkoutButton:hover {
+    background-color: #45a049;
+}
+
+#cartButton {
+    position: fixed; /* Фиксированное позиционирование */
+    bottom: 5px; /* Отступ от верхнего края */
+    right: 5px; /* Отступ от правого края */
+    margin: 10px; /* Отступ от краев (по желанию) */
+    z-index: 1000; /* Убедитесь, что элемент будет поверх других элементов */
+}
+
+.cart-icon {
+    display: flex;
+    align-items: center;
+    background: #fff; /* Фоновый цвет, чтобы выделить элемент (по желанию) */
+    border-radius: 50%; /* Округлые края (по желанию) */
+    padding: 10px; /* Отступы внутри блока (по желанию) */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2); /* Тень для выделения (по желанию) */
+}
+
+.cart-count {
+    background-color: red; /* Цвет фона для счётчика (по желанию) */
+    color: #fff; /* Цвет текста */
+    border-radius: 50%; /* Округлые края счётчика */
+    padding: 2px 6px; /* Отступы внутри счётчика */
+    position: absolute;
+    top: -10px; /* Отступ от верхнего края иконки */
+    right: -10px; /* Отступ от правого края иконки */
+    font-size: 14px; /* Размер шрифта счётчика */
+}

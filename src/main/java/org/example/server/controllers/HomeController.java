@@ -42,7 +42,4 @@ public class HomeController {
 
 
 
-    @RequestMapping(value = "/viewNew", method = RequestMethod.GET)
-    public String viewNew(){return "/Web/menuOriginal";}
-
 }
