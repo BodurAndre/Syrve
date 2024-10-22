@@ -10,7 +10,6 @@ import org.example.server.models.products.DishWithModifiers;
 import org.example.server.models.products.Product;
 import org.example.server.repositories.DishModifierRepository;
 import org.example.server.repositories.DishRepository;
-import org.example.server.repositories.ModifierRepository;
 import org.example.server.service.ProductService;
 import org.example.server.service.RestaurantService;
 import org.springframework.beans.factory.annotation.Autowired;

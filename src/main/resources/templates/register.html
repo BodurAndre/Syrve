@@ -45,6 +45,7 @@
     <div style="text-align: center;">
         <a href="/login">Назад</a>
     </div>
+    <p th:if="${errorMessage}" class="error" th:text="${errorMessage}">Пользователь такой существует</p>
 </form>
 </body>
 </html>

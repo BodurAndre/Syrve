@@ -15,6 +15,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("")
@@ -34,26 +35,46 @@ public class AuthController {
         return "register";
     }
 
-    @RequestMapping(value = "/register",method = RequestMethod.POST)
-    public String createNewUser(HttpServletRequest request, @ModelAttribute("user")User user){
+    @RequestMapping(value = "/register", method = RequestMethod.POST)
+    public String createNewUser(HttpServletRequest request, @ModelAttribute("user") User user, RedirectAttributes redirectAttributes) {
         try {
+            String rawPassword = user.getPassword();
             user.setRole("USER");
+
             User newUser = userService.createUser(user);
-            if(newUser == null){
-                return "redirect:/register?error";
+            if (newUser == null) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Ошибка: Не удалось создать пользователя.");
+                return "redirect:/register";
             }
-            Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(user.getEmail(),user.getPassword()));
+
+            System.out.println("Проходим токен");
+            UsernamePasswordAuthenticationToken authToken =
+                    new UsernamePasswordAuthenticationToken(user.getEmail(), rawPassword);
+            System.out.println("Прошли токен");
+
+            System.out.println("Проходим аутентифкацию");
+            // Аутентифицируем пользователя
+            Authentication authentication = authenticationManager.authenticate(authToken);
+            System.out.println("Прошли аутентифкацию");
+            // Устанавливаем аутентификацию в контекст безопасности
             SecurityContext securityContext = SecurityContextHolder.getContext();
             securityContext.setAuthentication(authentication);
+            System.out.println("Прошли аутентифкацию2");
+            // Создаем новую сессию и добавляем SecurityContext в нее
             HttpSession session = request.getSession(true);
-            session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,securityContext);
+            session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, securityContext);
+
+            // Перенаправляем на нужную страницу после успешной аутентификации
             return "redirect:/";
 
-        } catch (Exception e){
-            return "redirect:/register?error";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Ошибка: " + e.getMessage());
+            return "redirect:/register";
         }
-
     }
+
+
+
 
     @RequestMapping(value = "/login",method = RequestMethod.GET)
     public String login(){
