@@ -46,25 +46,17 @@ public class AuthController {
                 redirectAttributes.addFlashAttribute("errorMessage", "Ошибка: Не удалось создать пользователя.");
                 return "redirect:/register";
             }
-
-            System.out.println("Проходим токен");
             UsernamePasswordAuthenticationToken authToken =
                     new UsernamePasswordAuthenticationToken(user.getEmail(), rawPassword);
-            System.out.println("Прошли токен");
 
-            System.out.println("Проходим аутентифкацию");
-            // Аутентифицируем пользователя
             Authentication authentication = authenticationManager.authenticate(authToken);
-            System.out.println("Прошли аутентифкацию");
-            // Устанавливаем аутентификацию в контекст безопасности
+
             SecurityContext securityContext = SecurityContextHolder.getContext();
             securityContext.setAuthentication(authentication);
-            System.out.println("Прошли аутентифкацию2");
-            // Создаем новую сессию и добавляем SecurityContext в нее
+
             HttpSession session = request.getSession(true);
             session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, securityContext);
 
-            // Перенаправляем на нужную страницу после успешной аутентификации
             return "redirect:/";
 
         } catch (Exception e) {
@@ -72,9 +64,6 @@ public class AuthController {
             return "redirect:/register";
         }
     }
-
-
-
 
     @RequestMapping(value = "/login",method = RequestMethod.GET)
     public String login(){
@@ -89,5 +78,4 @@ public class AuthController {
         securityContext.setAuthentication(null);
         return "redirect:/login";
     }
-
 }

@@ -2,15 +2,10 @@ package org.example.server.controllers;
 
 
 import jakarta.servlet.http.HttpSession;
-import org.example.server.DTO.DishDTO;
-import org.example.server.models.RestaurantInfo;
-import org.example.server.service.RestaurantService;
 import org.springframework.stereotype.Controller;
 import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @Controller
 public class OrderController {
@@ -22,12 +17,8 @@ public class OrderController {
     }
 
     @GetMapping("/order")
-    public String showOrder(Model model, HttpSession session) {
-        String orderJson = (String) session.getAttribute("order");
-        System.out.println(orderJson);
-        session.removeAttribute("order");
-        model.addAttribute("order", orderJson);
-        return "test/order";
+    public String showOrder() {
+        return "Web/order";
     }
 
     @RequestMapping(value = "/viewProducts", method = RequestMethod.GET)

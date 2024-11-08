@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Page</title>
+</head>
+<body>
+<h1>Your Order</h1>
+<script th:inline="javascript">
+    const storedCart = localStorage.getItem('cart');  // Чтение данных из localStorage
+
+    if (storedCart) {
+        const cart = JSON.parse(storedCart);  // Преобразование строки обратно в массив
+        console.log(cart);  // Массив объектов корзины
+    } else {
+        console.log('Корзина пуста');
+    }
+</script>
+</body>
+</html>

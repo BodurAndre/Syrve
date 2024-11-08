@@ -1,13 +1,20 @@
 let cart = [];
 
 document.addEventListener("DOMContentLoaded", function () {
-    // Два запроса одновременно
+    // Загрузка корзины из LocalStorage
+    const savedCart = localStorage.getItem('cart');
+    if (savedCart) {
+        cart = JSON.parse(savedCart);
+        cartCount.textContent = cart.length;
+    }
+
+    // Ваш существующий код для запросов и отображения данных
     Promise.all([
-        fetch('/menu/dishes').then(response => response.json()), // Первый запрос
-        fetch('/menu/products').then(response => response.json()) // Второй запрос
+        fetch('/menu/dishes').then(response => response.json()),
+        fetch('/menu/products').then(response => response.json())
     ])
-        .then(([dishes, products]) => {  // Данные от обоих запросов
-            displayDishes(dishes); // Передача данных в функцию
+        .then(([dishes, products]) => {
+            displayDishes(dishes);
             displayProducts(products);
         })
         .catch(error => console.error('Error:', error));
@@ -158,18 +165,7 @@ function openModal(dish) {
                         totalPrice: Math.abs((quantity - modifier.freeOfChargeAmount) * modifier.currentPrice),
                     };
 
-                    if (dish.modifierGroups != null) {
-                        selectedModifiers.push({
-                            ...baseModifier,
-                            isGroup: true,
-                            groupName: modifier.nameGroup,
-                            groupId: modifier.idGroup
-                        });
-                    } else {
-                        selectedModifiers.push(baseModifier);
-                    }
-                } else {
-                    console.error(`Модификатор с id ${input.dataset['modifierId']} не найден`);
+                    selectedModifiers.push(baseModifier);
                 }
             }
         });
@@ -195,11 +191,15 @@ function openModal(dish) {
             });
         }
 
+        // Сохранение корзины в LocalStorage
+        localStorage.setItem('cart', JSON.stringify(cart));
+
         if (cartCount) {
             cartCount.textContent = cart.length;
         }
         closeModal();
     });
+
 }
 
 
@@ -435,11 +435,13 @@ function displayCart() {
     removeButtons.forEach(button => {
         button.addEventListener('click', (event) => {
             const index = event.target.dataset.index;
-            cart.splice(index, 1);  // Remove the item from the cart
-            cartCount.textContent = cart.length;  // Update cart count
-            displayCart();  // Re-render the cart
+            cart.splice(index, 1);  // Удаляем элемент из массива cart
+            localStorage.setItem('cart', JSON.stringify(cart));  // Обновляем localStorage
+            cartCount.textContent = cart.length;  // Обновляем количество элементов в корзине
+            displayCart();  // Перерисовываем корзину
         });
     });
+
 }
 
 
@@ -502,21 +504,20 @@ checkoutButton.addEventListener('click', () => {
     });
 
     // Log data for verification
-    console.log("Formatted Cart:", JSON.stringify(formattedCart, null, 2));
+    console.log("Formatted Cart:", JSON.stringify(cart, null, 2));
 
     fetch('/ordering', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formattedCart)
+        body: JSON.stringify(cart)
     })
         .then(response => {
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
             console.log('Order successfully submitted!');
-            console.log(formattedCart);
             // Redirect to /order page after successful response
             window.location.href = '/order';
         })

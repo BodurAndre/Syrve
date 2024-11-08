@@ -23,15 +23,15 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf().disable()  // Отключение CSRF защиты
-                .authorizeHttpRequests()
-                .requestMatchers("/login","/register", "/home/**", "/js/**","/jsTest/**", "/css/**", "/fonts.flaticon/**", "/images/**", "/scss/**", "/jsProduct").permitAll()
-                .anyRequest().authenticated();
-
-        http
-                .formLogin()
-                .loginPage("/login")
-                .defaultSuccessUrl("/");
+                .csrf(csrf -> csrf.disable())  // Отключение CSRF защиты
+                .authorizeHttpRequests(authz -> authz
+                        .requestMatchers("/login", "/register", "/home/**", "/js/**", "/jsTest/**", "/css/**", "/fonts.flaticon/**", "/images/**", "/scss/**", "/jsProduct").permitAll()
+                        .anyRequest().authenticated()
+                )
+                .formLogin(form -> form
+                        .loginPage("/login")
+                        .defaultSuccessUrl("/")
+                );
 
         return http.build();
     }
@@ -49,5 +49,4 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-
 }

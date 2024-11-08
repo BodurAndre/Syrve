@@ -1,6 +1,7 @@
 package org.example.server.controllers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -10,6 +11,7 @@ import org.example.server.models.products.DishWithModifiers;
 import org.example.server.models.products.Product;
 import org.example.server.repositories.DishModifierRepository;
 import org.example.server.repositories.DishRepository;
+import org.example.server.service.AdressService;
 import org.example.server.service.ProductService;
 import org.example.server.service.RestaurantService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,20 +30,25 @@ import java.util.*;
 @Controller
 public class TokenController {
 
+    ObjectMapper mapper = new ObjectMapper();
 
     private final ProductService productService;
     private final DishModifierRepository dishModifierRepository;
     private final RestaurantService restaurantService;
+    private final AdressService adressService;
 
-    public TokenController(ProductService productService, DishModifierRepository dishModifierRepository, RestaurantService restaurantService) {
+    public TokenController(ProductService productService, DishModifierRepository dishModifierRepository, RestaurantService restaurantService, AdressService adressService) {
         this.productService = productService;
         this.dishModifierRepository = dishModifierRepository;
         this.restaurantService = restaurantService;
+        this.adressService = adressService;
     }
 
     private static final String TOKEN_URL = "https://api-ru.iiko.services/api/1/access_token";
     private static final String ORGANIZATIONS_URL = "https://api-ru.iiko.services/api/1/organizations";
     private static final String NOMENCLATURE_URL = "https://api-ru.iiko.services/api/1/nomenclature";
+    private static final String CITIES_URL = "https://api-ru.iiko.services/api/1/cities";
+    private static final String STREET_URL = "https://api-ru.iiko.services/api/1/streets/by_city";
 
     private String token;
     private boolean apiLoginNotFound;
@@ -184,6 +191,86 @@ public class TokenController {
         return "test/tokenResult";
     }
 
+    @GetMapping("/saveCities")
+    public String saveCities(Model model){
+        if (apiLoginNotFound) {
+            log.warn("API login not found or incorrect.");
+            model.addAttribute("Error", "Не введен логин или он не верный");
+            apiLoginNotFound = false;
+            return "test/tokenResult";
+        }
+
+        String idRestaurant;
+        try {
+            idRestaurant = restaurantService.getIdRestaurant();
+        } catch (NoSuchElementException e) {
+            getOrganization(); // Initialize idRestaurant if not found
+            return "redirect:/saveCities";
+        }
+
+        if (idRestaurant == null || idRestaurant.isEmpty()) {
+            getOrganization(); // Initialize idRestaurant if not found
+            return "redirect:/saveCities";
+        }
+
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("Authorization", "Bearer " + token);
+
+        String requestBody = "{\"organizationIds\": [\"" + idRestaurant + "\"]}";
+        HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
+
+        try {
+            ResponseEntity<String> responseEntity = restTemplate.exchange(
+                    CITIES_URL,
+                    HttpMethod.POST,
+                    requestEntity,
+                    String.class
+            );
+
+            model.addAttribute("body", responseEntity.getBody());
+            JsonNode rootNode = mapper.readTree(responseEntity.getBody());
+            JsonNode cities = rootNode.path("cities").get(0).path("items");
+
+            adressService.saveCityFromJson(cities);
+
+            for (JsonNode city : cities) {
+                requestBody = "{\"organizationId\": \"" + idRestaurant + "\",\"cityId\":\"" + city.path("id").asText() + "\"}";
+                requestEntity = new HttpEntity<>(requestBody, headers);
+                responseEntity = restTemplate.exchange(
+                        STREET_URL,
+                        HttpMethod.POST,
+                        requestEntity,
+                        String.class
+                );
+                rootNode = mapper.readTree(responseEntity.getBody());
+                JsonNode street = rootNode.path("streets");
+                adressService.saveStreetFromJson(street);
+
+            }
+        } catch (HttpClientErrorException e) {
+            if (e.getRawStatusCode() == 401) {
+                getToken();
+                return "redirect:/saveCities";
+            }
+            if (e.getRawStatusCode() == 400){
+                getOrganization();
+                return "redirect:/saveCities";
+            }
+            else {
+                model.addAttribute("Error", "Ошибка при сохранении городов: " + e.getMessage());
+            }
+        } catch (JsonMappingException e) {
+            throw new RuntimeException(e);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+        return "test/tokenResult";
+    }
+
+
+
+
+
     @RequestMapping(value = "/resetToken", method = RequestMethod.POST)
     public String resetToken() {
         token = null;
@@ -221,4 +308,6 @@ public class TokenController {
             return dishRepository.findAll();
         }
     }
+
+
 }
