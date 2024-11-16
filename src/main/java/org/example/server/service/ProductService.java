@@ -38,11 +38,11 @@ public class ProductService {
     public void saveProductsFromJson(String json) throws JsonProcessingException {
         clearExistingData();
         JsonNode rootNode = objectMapper.readTree(json);
-        JsonNode productsNode = rootNode.get("groups");
+        JsonNode groupsNode = rootNode.get("groups");
 
         Map<String,Groups> groupsMap = new HashMap<>();
 
-        productsNode.forEach(productNode -> {
+        groupsNode.forEach(productNode -> {
             Groups groups = createGroups(productNode);
             groupsMap.put(groups.getIdGroup(), groups);
             groupsRepository.save(groups);
@@ -50,9 +50,9 @@ public class ProductService {
 
         Map<String, Dish> dishMap = new HashMap<>();
         Map<String, Modifier> modifierMap = new HashMap<>();
-        productsNode = rootNode.get("products");
+        groupsNode = rootNode.get("products");
 
-        productsNode.forEach(productNode -> {
+        groupsNode.forEach(productNode -> {
             String type = productNode.get("type").asText();
             switch (type) {
                 case "Modifier":
@@ -72,7 +72,7 @@ public class ProductService {
             }
         });
 
-        productsNode.forEach(productNode -> {
+        groupsNode.forEach(productNode -> {
             if ("Dish".equals(productNode.get("type").asText())) {
                 Dish dish = dishMap.get(productNode.get("id").asText());
                 saveDishModifiers(productNode, dish, modifierMap, dishMap);
@@ -115,7 +115,18 @@ public class ProductService {
     private Modifier createModifier(JsonNode productNode, Map<String, Groups> groupsMap) {
         String groupId = productNode.get("parentGroup").asText();
         Groups group = getGroupById(groupId, groupsMap);
-
+        if(group == null) {
+            group = new Groups(
+                    productNode.get("groupId").asText(),
+                    productNode.get("parentGroup").asText(),
+                    null,
+                    productNode.get("isDeleted").asBoolean(),
+                    null,
+                    null
+            );
+            groupsMap.put(group.getIdGroup(), group);
+            groupsRepository.save(group);
+        }
         return new Modifier(
                 productNode.get("id").asText(),
                 productNode.get("name").asText(),
@@ -223,7 +234,7 @@ public class ProductService {
             dishModifier.setModifier(modifierMap.get(modifierId));
         } else if (dishMap.containsKey(modifierId)) {
             dishModifier.setModifierDishID(dishMap.get(modifierId));
-        }
+        } else
         dishModifier.setMinQuantity(modifierNode.get("minAmount").asInt());
         dishModifier.setMaxQuantity(modifierNode.get("maxAmount").asInt());
         dishModifier.setDefaultQuantity(modifierNode.get("defaultAmount").asInt());

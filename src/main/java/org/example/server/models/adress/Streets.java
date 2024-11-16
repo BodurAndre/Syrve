@@ -19,15 +19,20 @@ public class Streets {
     @Column(name = "STREETID")
     private String streetId;
 
+    @ManyToOne
+    @JoinColumn(name = "CITYID")
+    private Cities city;
+
     @Column(name = "NAME")
     private String name;
 
     @Column(name = "isDELETED")
     private boolean isDeleted;
 
-    public Streets(String streetId, String name, boolean isDeleted) {
+    public Streets(String streetId, String name, boolean isDeleted, Cities city) {
         this.streetId = streetId;
         this.name = name;
         this.isDeleted = isDeleted;
+        this.city = city;
     }
 }

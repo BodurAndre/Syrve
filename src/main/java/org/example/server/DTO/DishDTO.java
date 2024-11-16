@@ -15,4 +15,5 @@ public class DishDTO {
     private List<ModifierDTO> modifiers;
     private String imageLinks;
     private String code;
+    private int amount;
 }

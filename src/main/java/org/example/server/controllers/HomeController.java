@@ -40,6 +40,4 @@ public class HomeController {
         return "test/home";
     }
 
-
-
 }

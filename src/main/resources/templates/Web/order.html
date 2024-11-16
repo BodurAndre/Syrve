@@ -111,75 +111,55 @@
             <div class="section delivery-options">
                 <h3>Способ доставки</h3>
                 <div class="option">
-                    <input type="radio" id="delivery" name="delivery" value="delivery" checked>
+                    <input type="radio" id="delivery" name="delivery" value="delivery" checked onchange="toggleFields()">
                     <label for="delivery">Доставка</label>
                 </div>
                 <div class="option">
-                    <input type="radio" id="pickup" name="delivery" value="pickup">
+                    <input type="radio" id="pickup" name="delivery" value="pickup" onchange="toggleFields()">
                     <label for="pickup">Забрать из ресторана</label>
-                </div>
-            </div>
-
-            <!-- Личные данные -->
-            <div class="section personal-details">
-                <h3>Личные данные</h3>
-                <div class="input-group">
-                    <label for="name">Имя</label>
-                    <input type="text" id="name" name="name" placeholder="Введите ваше имя">
-                </div>
-                <div class="input-group">
-                    <label for="email">E-mail</label>
-                    <input type="text" id="email" name="email" placeholder="Введите ваш e-mail">
                 </div>
             </div>
 
             <!-- Адрес доставки -->
             <div class="section delivery-address">
                 <h3>Адрес доставки</h3>
-                <div class="input-group">
-                    <label for="city">Город</label>
-                    <select id="city" name="city">
-                        <option value="Chisinau">Chisinau</option>
-                        <option value="Balti">Balti</option>
-                        <option value="Cahul">Cahul</option>
-                    </select>
-                </div>
-                <div class="input-group">
-                    <label for="street">Улица</label>
-                    <select id="street" name="street">
-                        <option value="Stefan cel Mare">Stefan cel Mare</option>
-                        <option value="Dacia">Dacia</option>
-                        <option value="Mihai Viteazul">Mihai Viteazul</option>
-                    </select>
-                </div>
+                <label for="citySelect" class="required-field">Выберите город:</label>
+                <select id="citySelect" name="city" required>
+                    <option value="">--Выберите город--</option>
+                </select>
 
-                <div id="house-fields" class="input-group">
-                    <input type="text" id="house" name="house" placeholder="Дом">
-                </div>
-
-                <div id="apartment-fields" class="apartment-group">
-                    <input type="text" id="entrance" name="entrance" placeholder="Подъезд">
-                    <input type="text" id="apartment" name="apartment" placeholder="Квартира">
-                    <input type="text" id="floor" name="floor" placeholder="Этаж">
-                    <input type="text" id="intercom" name="intercom" placeholder="Домофон">
-                </div>
+                <label for="streetSelect" class="required-field">Выберите улицу:</label>
+                <select id="streetSelect" name="street" required disabled>
+                    <option value="">--Выберите улицу--</option>
+                </select>
 
                 <div class="checkbox-group">
                     <input type="checkbox" id="isHouse" name="isHouse" onchange="toggleFields()">
                     <label for="isHouse">Дом на земле</label>
                 </div>
+
+                <div id="house-fields" class="input-group">
+                    <input type="text" id="house" name="house" placeholder="Дом" required>
+                </div>
+
+                <div id="apartment-fields" class="apartment-group">
+                    <input type="text" id="entrance" name="entrance" placeholder="Подъезд">
+                    <input type="text" id="floor" name="floor" placeholder="Этаж">
+                    <input type="text" id="apartment" name="apartment" placeholder="Квартира">
+                    <input type="text" id="intercom" name="intercom" placeholder="Домофон">
+                </div>
             </div>
 
             <!-- Контактные данные -->
             <div class="section contact-details">
-                <div class="input-group">
-                    <label for="Phone">Телефон</label>
-                    <input type="text" id="Phone" name="Phone" placeholder="Введите телефон">
-                </div>
-                <div class="input-group">
-                    <label for="Phone2">Повтор телефона</label>
-                    <input type="text" id="Phone2" name="Phone2" placeholder="Повторите телефон">
-                </div>
+                <label for="name" class="required-field">Имя</label>
+                <input type="text" id="name" name="name" placeholder="Введите имя" required>
+
+                <label for="email" class="required-field">Email</label>
+                <input type="email" id="email" name="email" placeholder="Введите email" required>
+
+                <label for="Phone" class="required-field">Телефон</label>
+                <input type="text" id="Phone" name="Phone" placeholder="Введите телефон" required>
             </div>
 
             <!-- Кнопка сделать заказ -->
@@ -283,10 +263,9 @@
 <script src="js/bootstrap-datepicker.js"></script>
 <script src="js/jquery.timepicker.min.js"></script>
 <script src="js/scrollax.min.js"></script>
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBVWaKrjvy3MaE7SQ74_uJiULgl1JY0H2s&sensor=false"></script>
-<script src="js/google-map.js"></script>
 <script src="js/main.js"></script>
 <script src="js/GetInformationRestaurant.js"></script>
 <script src="js/order.js"></script>
+<script src="delivery.js"></script>
 </body>
 </html>

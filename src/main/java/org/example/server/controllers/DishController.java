@@ -45,6 +45,7 @@ public class DishController {
                     dishDTO.setWeight(dish.getWeight());
                     dishDTO.setImageLinks(dish.getImageLinks());
                     dishDTO.setCode(dish.getCode());
+                    dishDTO.setAmount(1);
                     if (dish.getGroupId() != null) dishDTO.setGroupName(dish.getGroupId().getName());
 
                     // Группировка модификаторов по их группам
@@ -60,7 +61,8 @@ public class DishController {
                                 groupDTO.setName(group.getName());
                                 groupDTO.setMaxQuantity(entry.getValue().stream()
                                         .mapToInt(DishModifier::getMaxQuantity).max().orElse(0)); // Получаем максимальное значение maxQuantity для группы
-
+                                groupDTO.setFreeOfChargeAmount(entry.getValue().stream()
+                                        .mapToInt(DishModifier::getFreeOfChargeAmountAll).max().orElse(0));
                                 List<ModifierDTO> modifiers = entry.getValue().stream()
                                         .map(dishModifier -> {
                                             ModifierDTO dto = new ModifierDTO();
@@ -103,6 +105,7 @@ public class DishController {
                                     dto.setFreeOfChargeAmountAll(dishModifier.getFreeOfChargeAmountAll());
                                     dto.setGroupModifier(dishModifier.isGroupModifier());
                                     dto.setCurrentPrice(modifier.getCurrentPrice());
+                                    dto.setIdGroup(modifier.getGroupId().getIdGroup());
                                 }
                                 else {
                                     dto.setId(dishModifier.getModifierDishID().getProductId());
@@ -140,6 +143,7 @@ public class DishController {
                     productDTO.setPrice(product.getPrice());
                     productDTO.setImageLinks(product.getImageLinks());
                     productDTO.setIsIncludedMenu(product.getIsIncludedMenu());
+                    productDTO.setAmount(1);
                     if (product.getGroupId() != null) productDTO.setGroupName(product.getGroupId().getName());
 
                     return productDTO;

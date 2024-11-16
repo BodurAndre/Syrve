@@ -47,14 +47,28 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Открытие модального окна
-    cartIcon.addEventListener('click', function() {
-        cartModal.style.display = 'block';
+    document.addEventListener('DOMContentLoaded', function() {
+        const cartIcon = document.getElementById('cartIcon');
+        const cartModal = document.getElementById('cartModal');
+
+        if (cartIcon && cartModal) {
+            cartIcon.addEventListener('click', function() {
+                cartModal.style.display = 'block';
+            });
+        }
     });
 
-    // Закрытие модального окна
-    closeModal.addEventListener('click', function() {
-        cartModal.style.display = 'none';
+    document.addEventListener('DOMContentLoaded', function() {
+        const closeModal = document.getElementById('closeModal');
+        const cartModal = document.getElementById('cartModal');
+
+        if (closeModal && cartModal) {
+            closeModal.addEventListener('click', function() {
+                cartModal.style.display = 'none';
+            });
+        }
     });
+
 
     // Закрытие модального окна при клике вне его содержимого
     window.addEventListener('click', function(event) {

@@ -10137,3 +10137,11 @@ textarea.form-control {
     #submitOrder:hover {
         background-color: #ff6700;
     }
+
+.required-field::after {
+    content: " *";
+    color: red;
+}
+.error {
+    border-color: red;
+}

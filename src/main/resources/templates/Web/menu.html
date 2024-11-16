@@ -41,7 +41,7 @@
 </div>
 
 <!-- Модальное окно для отображения корзины -->
-<div id="cartModal" class="modal">
+<div id="cartModal" class="modal" style="display: none;">
 	<div class="modal-content">
 		<span class="close-button">&times;</span>
 		<div class="modal-body">
@@ -50,7 +50,7 @@
 				<!-- Товары корзины будут добавляться сюда -->
 			</ul>
 			<p id="totalPrice">Итоговая цена: 0.00</p>
-			<button id="checkoutButton">Оформить заказ</button>
+			<a href="/order" id="checkoutButton">Оформить заказ</a>
 		</div>
 	</div>
 </div>
@@ -288,8 +288,6 @@
 		<script src="js/jquery.timepicker.min.js"></script>
 		<script src="js/cart.js"></script>
 		<script src="js/scrollax.min.js"></script>
-		<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBVWaKrjvy3MaE7SQ74_uJiULgl1JY0H2s&sensor=false"></script>
-		<script src="js/google-map.js"></script>
 		<script src="js/main.js"></script>
 		<script src="js/dishesGet.js"></script>
 		<script src="js/GetInformationRestaurant.js"></script>

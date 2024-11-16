@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.example.server.models.OrderRequest;
 import org.example.server.models.products.Dish;
 import org.example.server.models.products.DishModifier;
 import org.example.server.models.products.DishWithModifiers;
@@ -32,6 +33,8 @@ public class TokenController {
 
     ObjectMapper mapper = new ObjectMapper();
 
+    private int requestAttempts = 0;
+
     private final ProductService productService;
     private final DishModifierRepository dishModifierRepository;
     private final RestaurantService restaurantService;
@@ -44,11 +47,14 @@ public class TokenController {
         this.adressService = adressService;
     }
 
-    private static final String TOKEN_URL = "https://api-ru.iiko.services/api/1/access_token";
-    private static final String ORGANIZATIONS_URL = "https://api-ru.iiko.services/api/1/organizations";
-    private static final String NOMENCLATURE_URL = "https://api-ru.iiko.services/api/1/nomenclature";
-    private static final String CITIES_URL = "https://api-ru.iiko.services/api/1/cities";
-    private static final String STREET_URL = "https://api-ru.iiko.services/api/1/streets/by_city";
+    private static final String API_IIKO = "https://api-ru.iiko.services/api/";
+    private static final String TOKEN_URL = API_IIKO + "1/access_token";
+    private static final String ORGANIZATIONS_URL = API_IIKO + "1/organizations";
+    private static final String NOMENCLATURE_URL = API_IIKO + "1/nomenclature";
+    private static final String CITIES_URL = API_IIKO + "1/cities";
+    private static final String STREET_URL = API_IIKO + "1/streets/by_city";
+    private static final String TERMINAL_URL = API_IIKO + "1/terminal_groups";
+    private static final String ORDER_URL = API_IIKO + "1/deliveries/create";
 
     private String token;
     private boolean apiLoginNotFound;
@@ -191,7 +197,7 @@ public class TokenController {
         return "test/tokenResult";
     }
 
-    @GetMapping("/saveCities")
+    @GetMapping("/saveAdress")
     public String saveCities(Model model){
         if (apiLoginNotFound) {
             log.warn("API login not found or incorrect.");
@@ -205,12 +211,12 @@ public class TokenController {
             idRestaurant = restaurantService.getIdRestaurant();
         } catch (NoSuchElementException e) {
             getOrganization(); // Initialize idRestaurant if not found
-            return "redirect:/saveCities";
+            return "redirect:/saveAdress";
         }
 
         if (idRestaurant == null || idRestaurant.isEmpty()) {
             getOrganization(); // Initialize idRestaurant if not found
-            return "redirect:/saveCities";
+            return "redirect:/saveAdress";
         }
 
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -234,7 +240,8 @@ public class TokenController {
             adressService.saveCityFromJson(cities);
 
             for (JsonNode city : cities) {
-                requestBody = "{\"organizationId\": \"" + idRestaurant + "\",\"cityId\":\"" + city.path("id").asText() + "\"}";
+                String cityID = city.path("id").asText();
+                requestBody = "{\"organizationId\": \"" + idRestaurant + "\",\"cityId\":\"" + cityID + "\"}";
                 requestEntity = new HttpEntity<>(requestBody, headers);
                 responseEntity = restTemplate.exchange(
                         STREET_URL,
@@ -244,17 +251,17 @@ public class TokenController {
                 );
                 rootNode = mapper.readTree(responseEntity.getBody());
                 JsonNode street = rootNode.path("streets");
-                adressService.saveStreetFromJson(street);
+                adressService.saveStreetFromJson(street, cityID);
 
             }
         } catch (HttpClientErrorException e) {
             if (e.getRawStatusCode() == 401) {
                 getToken();
-                return "redirect:/saveCities";
+                return "redirect:/saveAdress";
             }
             if (e.getRawStatusCode() == 400){
                 getOrganization();
-                return "redirect:/saveCities";
+                return "redirect:/saveAdress";
             }
             else {
                 model.addAttribute("Error", "Ошибка при сохранении городов: " + e.getMessage());
@@ -266,9 +273,6 @@ public class TokenController {
         }
         return "test/tokenResult";
     }
-
-
-
 
 
     @RequestMapping(value = "/resetToken", method = RequestMethod.POST)
@@ -309,5 +313,121 @@ public class TokenController {
         }
     }
 
+    @GetMapping("/getTerminalGroup")
+    public String TerminalGroup(Model model) {
+        if (apiLoginNotFound) {
+            log.warn("API login not found or incorrect.");
+            model.addAttribute("Error", "Не введен логин или он не верный");
+            apiLoginNotFound = false;
+            return "test/tokenResult";
+        }
+
+        String idRestaurant;
+        try {
+            idRestaurant = restaurantService.getIdRestaurant();
+        } catch (NoSuchElementException e) {
+            getOrganization(); // Initialize idRestaurant if not found
+            requestAttempts++;
+            return "redirect:/getTerminalGroup";
+        }
+
+        if (idRestaurant == null || idRestaurant.isEmpty()) {
+            getOrganization(); // Initialize idRestaurant if not found
+            requestAttempts++;
+            return "redirect:/getTerminalGroup";
+        }
+
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("Authorization", "Bearer " + token);
+
+        String requestBody = "{\"organizationIds\": [\"" + idRestaurant + "\"]," + "\"includeDisabled\": true" + "}";
+        HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
+
+        try {
+            ResponseEntity<String> responseEntity = restTemplate.exchange(
+                    TERMINAL_URL,
+                    HttpMethod.POST,
+                    requestEntity,
+                    String.class
+            );
+
+            model.addAttribute("body", responseEntity.getBody());
+            requestAttempts = 0;
+            JsonNode terminalGroup = mapper.readTree(responseEntity.getBody());
+            restaurantService.saveTerminalGroupFromJson(terminalGroup);
+
+        } catch (HttpClientErrorException e) {
+            if (e.getRawStatusCode() == 401 && requestAttempts<10) {
+                getToken();
+                requestAttempts++;
+                return "redirect:/getTerminalGroup";
+            }
+            if (e.getRawStatusCode() == 400 && requestAttempts<10) {
+                getOrganization();
+                requestAttempts++;
+                return "redirect:/getTerminalGroup";
+            } else {
+                model.addAttribute("Error", "Ошибка при сохранении терминала: " + e.getMessage() + "Код ошибки" + e.getRawStatusCode()) ;
+            }
+        } catch (JsonMappingException e) {
+            throw new RuntimeException(e);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+        return "test/tokenResult";
+    }
+
+    @PostMapping("/ordering")
+    public ResponseEntity<?> processOrder(@RequestBody String json) {
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+
+            // Преобразуем входящий JSON в объект OrderRequest
+            OrderRequest newOrderRequest = new OrderRequest();
+            newOrderRequest.organizationId = "e9161527-54d4-4141-9b26-ba90b26c2c3b";
+            newOrderRequest.terminalGroupId = "753a78c4-8802-49c3-8d3b-64dd7b001a10";
+            newOrderRequest.createOrderSettings = new OrderRequest.CreateOrderSettings();
+
+            // Преобразуем строку JSON в JsonNode для гибкости
+            JsonNode orderNode = objectMapper.readTree(json);
+            newOrderRequest.order = orderNode;
+
+            // Преобразуем объект обратно в JSON
+            String updatedJson = objectMapper.writeValueAsString(newOrderRequest);
+
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("Authorization", "Bearer " + token);
+
+            HttpEntity<String> requestEntity = new HttpEntity<>(updatedJson, headers);
+            try {
+                ResponseEntity<String> responseEntity = restTemplate.exchange(
+                        ORDER_URL,
+                        HttpMethod.POST,
+                        requestEntity,
+                        String.class
+                );
+                System.out.println(updatedJson);
+                return ResponseEntity.ok().build();
+
+            } catch (HttpClientErrorException e) {
+                if (e.getRawStatusCode() == 401) {
+                    getToken();
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                            .body("Unauthorized: Token expired or invalid.");
+                } else if (e.getRawStatusCode() == 400) {
+                    getOrganization();
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body("Bad Request: " + e.getResponseBodyAsString());
+                } else {
+                    return ResponseEntity.status(e.getRawStatusCode())
+                            .body("Error: " + e.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Internal Server Error: " + e.getMessage());
+        }
+    }
 
 }

@@ -1,14 +1,12 @@
 let cart = [];
-
 document.addEventListener("DOMContentLoaded", function () {
-    // Загрузка корзины из LocalStorage
     const savedCart = localStorage.getItem('cart');
     if (savedCart) {
         cart = JSON.parse(savedCart);
         cartCount.textContent = cart.length;
     }
+    console.log(cart)
 
-    // Ваш существующий код для запросов и отображения данных
     Promise.all([
         fetch('/menu/dishes').then(response => response.json()),
         fetch('/menu/products').then(response => response.json())
@@ -50,7 +48,7 @@ function openModal(dish) {
     // Безопасные вызовы map
     const modifierGroupsHtml = Array.isArray(dish.modifierGroups)
         ? dish.modifierGroups.map(group => `
-            <h4>${group.name} (max = ${group.maxQuantity})</h4>
+            <h4>${group.name} Бесплатно: ${group.freeOfChargeAmount}</h4>
             ${group.modifiers.map(modifier => `
                 <div class="product-description">
                     <label>${modifier.name}:</label>
@@ -61,7 +59,7 @@ function openModal(dish) {
                            data-modifier-id="${modifier.id}" 
                            data-group-id="${group.name}"
                            class="modifier-input">
-                    <span>Price: ${modifier.currentPrice} MDL | Free: ${modifier.freeOfChargeAmount}</span>
+                    <span>Цена: ${modifier.currentPrice} MDL</span>
                 </div>
             `).join('')}
         `).join('')
@@ -77,7 +75,7 @@ function openModal(dish) {
                        max="${modifier.maxQuantity}" 
                        data-modifier-id="${modifier.id}" 
                        class="modifier-input">
-                <span>Price: ${modifier.currentPrice} MDL | Free: ${modifier.freeOfChargeAmount}</span>
+                <span>Цена: ${modifier.currentPrice} MDL | Бесплатно: ${modifier.freeOfChargeAmount}</span>
             </div>
         `).join('')
         : '';
@@ -103,23 +101,51 @@ function openModal(dish) {
 
     const inputs = document.querySelectorAll('.modifier-input');
     const finalPriceElement = document.getElementById('finalPrice');
-    let finalPrice = parseFloat(dish.price);
+    let finalPrice = 0;
 
     // Update price when modifier quantity changes
     inputs.forEach(input => {
         input.addEventListener('input', (event) => {
+
             let group = dish.modifierGroups.find(g => g.name === input.dataset['groupId']);
-            let totalQuantity = 0;
+            let totalQuantity = 0
 
             if (group) {
+                // Handle group modifiers
                 inputs.forEach(i => {
                     if (group.modifiers.some(m => m.id == i.dataset['modifierId'])) {
-                        totalQuantity += parseInt(i.value);
+                        totalQuantity += parseInt(i.value) || 0; // Add NaN check
                     }
                 });
 
+                // If the total quantity exceeds the maximum, adjust the value
                 if (totalQuantity > group.maxQuantity) {
-                    event.target.value = group.maxQuantity - (totalQuantity - parseInt(event.target.value));
+                    const excess = totalQuantity - group.maxQuantity;
+                    const newValue = parseInt(event.target.value) - excess;
+
+                    if (newValue >= 0) {
+                        event.target.value = newValue; // Update value if not negative
+                    } else {
+                        event.target.value = 0; // Set value to 0 if it becomes negative
+                    }
+                }
+            } else {
+                // Handle regular (non-grouped) modifiers
+                let modifier = dish.modifiers.find(m => m.id === input.dataset['modifierId']);
+                if (modifier) {
+                    totalQuantity = parseInt(input.value) || 0; // Update totalQuantity for regular modifiers
+
+                    // If the total quantity exceeds the max, adjust the value
+                    if (totalQuantity > modifier.maxQuantity) {
+                        const excess = totalQuantity - modifier.maxQuantity;
+                        const newValue = parseInt(event.target.value) - excess;
+
+                        if (newValue >= 0) {
+                            event.target.value = newValue;
+                        } else {
+                            event.target.value = 0;
+                        }
+                    }
                 }
             }
 
@@ -127,21 +153,54 @@ function openModal(dish) {
         });
     });
 
+
     function updateFinalPrice() {
-        finalPrice = parseFloat(dish.price);
-        inputs.forEach(input => {
-            const modifier = dish.modifiers.concat(...dish.modifierGroups.map(g => g.modifiers)).find(m => m.id == input.dataset['modifierId']);
+        let priceDish = parseFloat(dish.price);
+        const inputArray = Array.from(inputs);
+
+        // Хранение оставшегося бесплатного количества для каждой группы
+        const groupFreeQuantities = {};
+
+        // Инициализация оставшегося бесплатного количества для групп
+        dish.modifierGroups.forEach(group => {
+            groupFreeQuantities[group.name] = group.freeOfChargeAmount || 0;
+        });
+
+        inputArray.forEach(input => {
+            const modifier = dish.modifiers.concat(...dish.modifierGroups.map(g => g.modifiers))
+                .find(m => m.id == input.dataset['modifierId']);
             if (modifier) {
-                const quantity = parseInt(input.value);
-                if (quantity > modifier.freeOfChargeAmount) {
-                    finalPrice += (quantity - modifier.freeOfChargeAmount) * modifier.currentPrice;
+                const quantity = parseInt(input.value) || 0;
+                let chargeableQuantity = 0;
+
+                if (modifier.groupModifier) {
+                    const group = dish.modifierGroups.find(g => g.modifiers.some(m => m.id === modifier.id));
+                    if (group) {
+                        const groupFreeLeft = groupFreeQuantities[group.name] || 0;
+
+                        const freeForThisModifier = Math.min(quantity, groupFreeLeft);
+                        groupFreeQuantities[group.name] -= freeForThisModifier;
+
+                        chargeableQuantity = Math.max(0, quantity - freeForThisModifier);
+                    }
+                } else {
+                    const freeForModifier = modifier.freeOfChargeAmount || 0;
+                    chargeableQuantity = Math.max(0, quantity - freeForModifier);
                 }
+
+                priceDish += chargeableQuantity * (modifier.currentPrice || 0);
             }
         });
-        finalPriceElement.textContent = `${finalPrice.toFixed(2)} MDL`;
+
+
+        // Обновляем итоговую цену
+        finalPriceElement.textContent = `${priceDish} MDL`;
+        finalPrice = priceDish;
+        console.log(finalPrice)
     }
 
     const addToCartButton = document.getElementById('addToCartButton');
+
     if (!addToCartButton) {
         console.error('Элемент с id "addToCartButton" не найден');
         return;
@@ -155,35 +214,33 @@ function openModal(dish) {
                 const modifier = dish.modifiers.concat(...dish.modifierGroups.map(g => g.modifiers))
                     .find(m => m.id == input.dataset['modifierId']);
 
+
                 if (modifier) {
                     const baseModifier = {
                         id: modifier.id,
                         name: modifier.name,
                         quantity: quantity,
                         amount: 1,
+                        isGroupModifier: modifier.groupModifier,
+                        idGroup: modifier.idGroup,
                         price: modifier.currentPrice,
                         totalPrice: Math.abs((quantity - modifier.freeOfChargeAmount) * modifier.currentPrice),
                     };
-
+                    console.log(baseModifier)
                     selectedModifiers.push(baseModifier);
                 }
             }
         });
 
-        const existingDishIndex = cart.findIndex(item => item.dish.name === dish.name);
-        if (existingDishIndex > -1) {
-            const existingDish = cart[existingDishIndex];
-            selectedModifiers.forEach(modifier => {
-                const existingModifier = existingDish.modifiers.find(m => m.id === modifier.id);
-                if (existingModifier) {
-                    existingModifier.quantity += modifier.quantity;
-                    existingModifier.totalPrice += modifier.totalPrice;
-                } else {
-                    existingDish.modifiers.push(modifier);
-                }
+        console.log(finalPrice)
+        if(finalPrice == 0){
+            cart.push({
+                dish: dish,
+                modifiers: selectedModifiers,
+                finalPrice: parseFloat(dish.price)
             });
-            existingDish.finalPrice = finalPrice;
-        } else {
+        }
+        else{
             cart.push({
                 dish: dish,
                 modifiers: selectedModifiers,
@@ -284,8 +341,6 @@ function displayDishes(dishes) {
 function displayProducts(dishes) {
     const groups = {};
 
-    console.log(dishes);
-
     // Separate dishes by groups
     dishes.forEach(dish => {
         if (dish.isIncludedMenu) {
@@ -384,30 +439,31 @@ function displayCart() {
     cart.forEach((item, index) => {
         const itemElement = document.createElement('li');
         itemElement.innerHTML = `
-            <img src="${item.dish.imageLinks}" alt="${item.dish.name}" class="product-image">
-            <div class="modal-text">
-                <h3 class="product-title">${item.dish.name}</h3>
-                <p class="product-weight">${item.dish.weight} gr</p>
-                <div class="modifiers-section">
-                    ${item.modifiers.map(mod => `
-                        <div class="product-description">
-                            <label>${mod.name}:</label>
-                            <span>${mod.quantity}</span>
-                            <span>Price: ${mod.totalPrice.toFixed(2)} MDL</span>
-                        </div>
-                    `).join('')}
-                </div>
-                <div class="product-footer">
-                    <strong>Итоговая цена: ${item.finalPrice.toFixed(2)} MDL</strong>
-                    <button class="remove-button" data-index="${index}">Удалить</button>
-                </div>
-            </div>  
-        `;
+        <div class="modal-text">
+            <h3 class="product-title">${item.dish.name}</h3>
+             <img src="${item.dish.imageLinks}" alt="${item.dish.name}" class="product-image">
+            <p class="product-weight">${item.dish.weight} gr</p>
+            <div class="modifiers-section">
+                ${item.modifiers.map(mod => `
+                    <div class="product-description">
+                        <label>${mod.name}:</label>
+                        <span>${mod.quantity}</span>
+                        ${mod.totalPrice > 0 ? `<span>Цена: ${mod.totalPrice} MDL</span>` : ''}
+                    </div>
+                `).join('')}
+            </div>
+            <div class="product-footer">
+                <strong>Итоговая цена: ${item.finalPrice} MDL</strong>
+                <button class="remove-button" data-index="${index}">Удалить</button>
+            </div>
+        </div>  
+    `;
         cartItems.appendChild(itemElement);
         totalPrice += item.finalPrice;
     });
 
-    totalPriceElement.textContent = `Общая сумма: ${totalPrice.toFixed(2)} MDL`;
+
+    totalPriceElement.textContent = `Общая сумма: ${totalPrice} MDL`;
 
     // Add event listeners for "Remove" buttons
     const inputs = document.querySelectorAll('.modifier-input-cart');
@@ -423,7 +479,7 @@ function displayCart() {
 
                 modifier.quantity = newQuantity;
                 modifier.totalPrice = (newQuantity - modifier.freeOfChargeAmount) * modifier.price;
-                input.nextElementSibling.textContent = `Price: ${modifier.quantity} x ${modifier.price} MDL = ${modifier.totalPrice.toFixed(2)} MDL`;
+                input.nextElementSibling.textContent = `Price: ${modifier.quantity} x ${modifier.price} MDL = ${modifier.totalPrice} MDL`;
 
                 updateFinalPriceInCart(cartItem);
             }
@@ -462,66 +518,4 @@ window.addEventListener("click", (event) => {
     if (event.target === cartModal || event.target === modal) {
         closeModal();
     }
-});
-
-// "Checkout" Button
-const checkoutButton = document.getElementById('checkoutButton');
-
-checkoutButton.addEventListener('click', () => {
-    console.log(cart);
-    const formattedCart = cart.map(item => {
-        // Base dish object
-        const formattedItem = {
-            id: item.dish.id,  // Unique dish id
-            name: item.dish.name,  // Dish name
-            amount: item.dish.amount,  // Dish quantity
-            code: item.dish.code // Product code
-        };
-
-        // If there are modifiers, add them
-        if (item.modifiers.length > 0) {
-            formattedItem.modifiers = item.modifiers.map(mod => {
-                // Check if the modifier is part of a group
-                if (mod.groupId && mod.groupName) {
-                    return {
-                        id: mod.id,
-                        name: mod.name,
-                        amount: mod.quantity,
-                        groupId: mod.groupId,  // Modifier group ID (if any)
-                        groupName: mod.groupName // Modifier group name (if any)
-                    };
-                } else {
-                    return {
-                        id: mod.id,
-                        name: mod.name,
-                        amount: mod.quantity
-                    };
-                }
-            });
-        }
-
-        return formattedItem;
-    });
-
-    // Log data for verification
-    console.log("Formatted Cart:", JSON.stringify(cart, null, 2));
-
-    fetch('/ordering', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(cart)
-    })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            console.log('Order successfully submitted!');
-            // Redirect to /order page after successful response
-            window.location.href = '/order';
-        })
-        .catch((error) => {
-            console.error('Error:', error);
-        });
 });
