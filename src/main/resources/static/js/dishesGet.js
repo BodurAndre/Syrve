@@ -81,10 +81,9 @@ function openModal(dish) {
         : '';
 
     modalBody.innerHTML = `
-        <img src="${dish.imageLinks}" alt="${dish.name}" class="product-image">
         <div class="modal-text">
             <h3 class="product-title">${dish.name}</h3>
-            <p class="product-weight">${dish.weight} gr</p>
+            <img src="${dish.imageLinks}" alt="${dish.name}" class="product-image">
             <div class="modifiers-section">
                 ${modifierGroupsHtml}
                 <br>
@@ -382,7 +381,6 @@ function displayProducts(dishes) {
                                 <span class="price">${dish.price} MDL</span>
                             </div>
                         </div>
-                        <p><span>${dish.weight} gr</span></p>
                     </div>
                 </div>
                 <span class="flat flaticon-bread" style="left: 0;"></span>
@@ -415,9 +413,7 @@ function displayProducts(dishes) {
 
 
 cartButton.addEventListener('click', () => {
-    console.log('Нажатие кнопки.');
-    displayCart(); // Убедитесь, что эта функция вызывается
-    cartModal.style.display = "block";
+    window.location.href = "/order";
 });
 
 // Display cart content
@@ -441,8 +437,7 @@ function displayCart() {
         itemElement.innerHTML = `
         <div class="modal-text">
             <h3 class="product-title">${item.dish.name}</h3>
-             <img src="${item.dish.imageLinks}" alt="${item.dish.name}" class="product-image">
-            <p class="product-weight">${item.dish.weight} gr</p>
+            <img src="${item.dish.imageLinks}" alt="${item.dish.name}" class="product-image">
             <div class="modifiers-section">
                 ${item.modifiers.map(mod => `
                     <div class="product-description">
