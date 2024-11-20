@@ -35,6 +35,8 @@ public class TokenController {
 
     private int requestAttempts = 0;
 
+    String terminalTestGroupId = "753a78c4-8802-49c3-8d3b-64dd7b001a10";
+
     private final ProductService productService;
     private final DishModifierRepository dishModifierRepository;
     private final RestaurantService restaurantService;
@@ -377,57 +379,109 @@ public class TokenController {
         return "test/tokenResult";
     }
 
+
     @PostMapping("/ordering")
     public ResponseEntity<?> processOrder(@RequestBody String json) {
         try {
-            ObjectMapper objectMapper = new ObjectMapper();
+            // Проверка API логина
+            if (apiLoginNotFound) {
+                log.warn("API login not found or incorrect.");
+                apiLoginNotFound = false;
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body("API login not found or incorrect.");
+            }
 
-            // Преобразуем входящий JSON в объект OrderRequest
-            OrderRequest newOrderRequest = new OrderRequest();
-            newOrderRequest.organizationId = "e9161527-54d4-4141-9b26-ba90b26c2c3b";
-            newOrderRequest.terminalGroupId = "753a78c4-8802-49c3-8d3b-64dd7b001a10";
-            newOrderRequest.createOrderSettings = new OrderRequest.CreateOrderSettings();
+            // Попытка получить idRestaurant
+            String idRestaurant = getOrFetchIdRestaurant();
+            if (idRestaurant == null || idRestaurant.isEmpty()) {
+                log.warn("Failed to fetch or initialize Restaurant ID.");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("Unable to fetch restaurant ID.");
+            }
 
-            // Преобразуем строку JSON в JsonNode для гибкости
-            JsonNode orderNode = objectMapper.readTree(json);
-            newOrderRequest.order = orderNode;
+            // Преобразование JSON в объект OrderRequest
+            OrderRequest newOrderRequest = createOrderRequest(json, idRestaurant);
 
-            // Преобразуем объект обратно в JSON
-            String updatedJson = objectMapper.writeValueAsString(newOrderRequest);
 
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set("Authorization", "Bearer " + token);
+            // Попытка отправить заказ
+            String response = tryToProcessOrder(newOrderRequest);
+            if (response == null) {
+                log.error("Failed to process order after retries.");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("Failed to process order.");
+            }
 
-            HttpEntity<String> requestEntity = new HttpEntity<>(updatedJson, headers);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error processing order: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Internal Server Error: " + e.getMessage());
+        }
+    }
+
+    // Метод для получения ID ресторана
+    private String getOrFetchIdRestaurant() {
+        try {
+            return restaurantService.getIdRestaurant();
+        } catch (NoSuchElementException e) {
+            log.warn("Restaurant ID not found. Fetching organization data...");
+            getOrganization(); // Обновить данные
+            return restaurantService.getIdRestaurant();
+        }
+    }
+
+    // Метод для создания OrderRequest
+    private OrderRequest createOrderRequest(String json, String idRestaurant) throws Exception {
+        ObjectMapper objectMapper = new ObjectMapper();
+        OrderRequest newOrderRequest = new OrderRequest();
+        newOrderRequest.organizationId = idRestaurant;
+        newOrderRequest.terminalGroupId = terminalTestGroupId;
+        newOrderRequest.createOrderSettings = new OrderRequest.CreateOrderSettings();
+        JsonNode orderNode = objectMapper.readTree(json);
+        newOrderRequest.order = orderNode;
+        return newOrderRequest;
+    }
+
+    // Метод для обработки заказа с повторными попытками
+    private String tryToProcessOrder(OrderRequest newOrderRequest) {
+        int maxRetries = 3; // Максимальное количество попыток
+        int attempt = 0;
+        while (attempt < maxRetries) {
             try {
+                attempt++;
+                log.info("Attempt {} to process order...", attempt);
+                String updatedJson = new ObjectMapper().writeValueAsString(newOrderRequest);
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
+                headers.set("Authorization", "Bearer " + token);
+
+                HttpEntity<String> requestEntity = new HttpEntity<>(updatedJson, headers);
+
                 ResponseEntity<String> responseEntity = restTemplate.exchange(
                         ORDER_URL,
                         HttpMethod.POST,
                         requestEntity,
                         String.class
                 );
-                System.out.println(updatedJson);
-                return ResponseEntity.ok().build();
 
+                log.info("Order successfully processed on attempt {}.", attempt);
+                return responseEntity.getBody();
             } catch (HttpClientErrorException e) {
                 if (e.getRawStatusCode() == 401) {
-                    getToken();
-                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                            .body("Unauthorized: Token expired or invalid.");
+                    log.warn("Unauthorized (401). Refreshing token...");
+                    getToken(); // Обновить токен
                 } else if (e.getRawStatusCode() == 400) {
-                    getOrganization();
-                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                            .body("Bad Request: " + e.getResponseBodyAsString());
+                    log.warn("Bad Request (400). Fetching organization data...");
+                    getOrganization(); // Обновить данные
                 } else {
-                    return ResponseEntity.status(e.getRawStatusCode())
-                            .body("Error: " + e.getMessage());
+                    log.error("HTTP error: {}", e.getMessage());
+                    break; // Прерываем цикл при других ошибках
                 }
+            } catch (Exception e) {
+                log.error("Error during order processing attempt {}: {}", attempt, e.getMessage());
+                break; // Прерываем цикл при других исключениях
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Internal Server Error: " + e.getMessage());
         }
+        return null; // Если не удалось обработать заказ
     }
-
 }

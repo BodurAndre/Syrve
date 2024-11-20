@@ -1,51 +1,70 @@
 // Читаем данные из localStorage
 const storedCart = JSON.parse(localStorage.getItem('cart')) || [];
-
 console.log(storedCart);
 
-let totalPrice = 0; // Переменная для итоговой суммы
+let totalPrice = 0; // Variable for total price
 
 if (storedCart.length > 0) {
-    let groupHtml = ''; // Строка для хранения HTML кода товаров
+    let groupHtml = ''; // String to hold the HTML of the products
 
-    // Цикл для обработки каждого товара в корзине
-    storedCart.forEach(item => {
+    // Loop to process each item in the cart
+    storedCart.forEach((item, index) => {
         groupHtml += `
             <div class="product">
                 <div class="product-img" style="background-image: url('${item.dish.imageLinks}');"></div>
                 <div class="product-details">
                     <h2>${item.dish.name}</h2>
                     <div class="modifiers-section">
-                        ${item.modifiers.map(mod => `
-                            <div class="product-description">
+                        ${item.modifiers.map(mod =>
+            `<div class="product-description">
                                 <label>${mod.name}:</label>
                                 <span>${mod.quantity}</span>
                                 ${mod.totalPrice > 0 ? `<span> - ${mod.totalPrice.toFixed(2)} MDL</span>` : ''}
-                            </div>
-                        `).join('')}
+                            </div>`
+        ).join('')}
                     </div>
                     <div class="price">Цена: ${item.finalPrice} MDL</div>
+                    <button class="remove-button" data-index="${index}">Удалить</button>
                 </div>
             </div>
         `;
-        totalPrice += item.finalPrice; // Добавляем цену каждого товара в итоговую сумму
+        totalPrice += item.finalPrice; // Add the price of each item to the total
     });
 
-    // Помещаем товары в блок с классом "product-list"
+    // Insert the products into the "product-list" block
     const productList = document.querySelector('.product-list');
     productList.innerHTML = groupHtml;
 
-    // Отображаем итоговую сумму
+    // Display the total price
     const totalElement = document.querySelector('.total');
     totalElement.innerHTML = `<h3>Итоговая сумма: ${totalPrice} MDL</h3>`;
+
+    // Add event listener to remove buttons
+    const removeButtons = document.querySelectorAll('.remove-button');
+    removeButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const index = this.getAttribute('data-index');
+            removeItemFromCart(index);
+        });
+    });
 } else {
     document.querySelector('.total').innerHTML = `<h3>Корзина пуста</h3>`;
 }
 
-/*отображение доставки*/
+// Function to remove item from cart and update localStorage
+function removeItemFromCart(index) {
+    // Remove the item from the cart array
+    storedCart.splice(index, 1);
+    // Update the cart in localStorage
+    localStorage.setItem('cart', JSON.stringify(storedCart));
 
+    // Re-render the cart
+    location.reload();
+}
+
+/* Display Delivery Option */
 window.onload = function() {
-    // Изначально показываем apartment-fields и скрываем house-fields
+    // Initially show apartment fields and hide house fields
     toggleFields();
 }
 
@@ -54,13 +73,14 @@ function toggleFields() {
     const apartmentFields = document.getElementById('apartment-fields');
     const houseFields = document.getElementById('house-fields');
 
-    // Если галочка установлена - скрываем поля для квартиры, показываем дом
+    // If checkbox is checked, hide apartment fields and show house fields
     if (isHouseCheckbox.checked) {
         apartmentFields.style.display = 'none';
     } else {
         apartmentFields.style.display = 'block';
     }
 }
+
 
 const checkoutButton = document.getElementById('submitOrder');
 
@@ -70,7 +90,7 @@ checkoutButton.addEventListener('click', () => {
         // Базовый объект блюда
         const formattedItem = {
             productId: item.dish.id,
-            price: item.finalPrice,
+            price: item.dish.price,
             type: "Product",  // Unique dish id
             amount: 1                 // Dish quantity
         };
@@ -102,7 +122,7 @@ checkoutButton.addEventListener('click', () => {
     const entrance = document.getElementById("entrance").value;
     const apartment = document.getElementById("apartment").value;
     const floor = document.getElementById("floor").value;
-    const intercom = document.getElementById("intercom").value;
+    const doorphone = document.getElementById("intercom").value;
     const isHouse = document.getElementById("isHouse").checked;
 
     // Получаем контактные данные
@@ -174,31 +194,31 @@ checkoutButton.addEventListener('click', () => {
         orderData.deliveryPoint.address.entrance = entrance;
         orderData.deliveryPoint.address.flat = apartment;
         orderData.deliveryPoint.address.floor = floor;
-        orderData.deliveryPoint.address.intercom = intercom;
+        orderData.deliveryPoint.address.doorphone = doorphone;
     }
 
     //localStorage.clear();
 
     console.log(orderData)
 
-    // fetch('/ordering', {
-    //     method: 'POST',
-    //     headers: {
-    //         'Content-Type': 'application/json',
-    //     },
-    //     body: JSON.stringify(orderData)
-    // })
-    //     .then(response => {
-    //         if (!response.ok) {
-    //             throw new Error('Network response was not ok');
-    //         }
-    //         console.log('Order successfully submitted!');
-    //         // Перенаправление на страницу заказа
-    //         window.location.href = '/orderStatus';
-    //     })
-    //     .catch(error => {
-    //         console.error('Error:', error);
-    //     });
+    fetch('/ordering', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData)
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            console.log('Order successfully submitted!');
+            // Перенаправление на страницу заказа
+            //window.location.href = '/orderStatus';
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
 
 });
 
