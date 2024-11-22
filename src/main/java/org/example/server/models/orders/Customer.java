@@ -1,5 +1,6 @@
 package org.example.server.models.orders;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -9,16 +10,16 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "Customer")
+@Table(name = "OrderCustomer")
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Customer {
     @Id
-    @Column(name = "ID")
-    @GeneratedValue(strategy= GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "name")
+    @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(name = "type")
+    @Column(name = "type", nullable = false)
     private String type;
 }

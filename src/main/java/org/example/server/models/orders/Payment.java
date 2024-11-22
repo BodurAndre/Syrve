@@ -1,5 +1,6 @@
 package org.example.server.models.orders;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -9,19 +10,23 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "Payment")
+@Table(name = "OrderPayment")
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Payment {
     @Id
-    @Column(name = "ID")
-    @GeneratedValue(strategy= GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @Column(name = "Type")
+    @Column(name = "payment_type_kind", nullable = false)
     private String paymentTypeKind;
 
-    @Column(name = "sum")
+    @Column(name = "sum", nullable = false)
     private double sum;
 
-    @Column(name = "isProcessedExternally")
+    @Column(name = "is_processed_externally", nullable = false)
     private boolean isProcessedExternally;
+
+    @ManyToOne
+    @JoinColumn(name = "order_id", nullable = false)
+    private Order order;
 }

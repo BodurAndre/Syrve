@@ -1,10 +1,12 @@
 package org.example.server.models.orders;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -12,38 +14,37 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "Order")
+@Table(name = "OrderOrders")
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Order {
+
     @Id
-    @Column(name = "ID")
-    @GeneratedValue(strategy= GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @Column(name = "PHONE")
+    @Column(name = "phone", nullable = false)
     private String phone;
 
-    @Column(name = "orderTypeId")
+    @Column(name = "order_type_id", nullable = false)
     private String orderTypeId;
 
-    @ManyToOne
-    @JoinColumn(name = "adress")
-    private Adress adress;
+    @ManyToOne(fetch = FetchType.LAZY, optional = true) // Разрешаем null
+    @JoinColumn(name = "address_id", nullable = true)
+    private Adress address;
 
-    @ManyToOne
-    @JoinColumn(name = "customer")
+    @ManyToOne(fetch = FetchType.LAZY, optional = true) // Разрешаем null
+    @JoinColumn(name = "customer_id", nullable = true)
     private Customer customer;
 
-    @ManyToMany
-    @JoinColumn(name = "items")
-    private List<Item> items;
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Item> items = new ArrayList<>();
+
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Payment> payments = new ArrayList<>();
 
     @Column(name = "comment")
     private String comment;
 
-    @ManyToOne
-    @JoinColumn(name = "payments")
-    private Payment payments;
-
-    @Column(name = "PRODUCTID")
-    private String Jsom;
+    @Column(name = "JSON", columnDefinition = "TEXT")
+    private String json;
 }

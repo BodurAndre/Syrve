@@ -6,27 +6,30 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "Item")
+@Table(name = "OrderItem")
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Item {
     @Id
-    @Column(name = "ID")
-    @GeneratedValue(strategy= GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @Column(name="productId")
+    @Column(name = "product_id", nullable = false)
     private String productId;
 
-    @Column(name="amount")
+    @Column(name = "amount", nullable = false)
     private int amount;
 
-    @ManyToMany
-    @JoinColumn(name = "modifiers")
-    private List<OrderModifier> modifiers;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "order_id", nullable = false)
+    private Order order;
+
+    @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<OrderModifier> modifiers = new ArrayList<>();
 }

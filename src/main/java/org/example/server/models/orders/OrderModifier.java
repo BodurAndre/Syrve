@@ -17,21 +17,19 @@ import org.example.server.models.products.Modifier;
 public class OrderModifier {
 
     @Id
-    @Column(name = "ID")
-    @GeneratedValue(strategy= GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @ManyToOne
-    @JoinColumn(name = "modifier")
-    private Modifier productId;
+    @Column(name = "product_id", nullable = false)
+    private String productId;
 
-    @ManyToOne
-    @JoinColumn(name = "modifierDish")
-    private Dish dishId;
-
-    @Column(name = "amount")
+    @Column(name = "amount", nullable = false)
     private int amount;
 
-    @Column(name = "productGroupId")
+    @Column(name = "product_group_id")
     private String productGroupId;
+
+    @ManyToOne
+    @JoinColumn(name = "item_id", nullable = false)
+    private Item item;
 }
