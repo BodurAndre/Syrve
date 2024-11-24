@@ -205,21 +205,33 @@ checkoutButton.addEventListener('click', () => {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            'Accept': 'application/json', // Убедитесь, что сервер возвращает JSON
         },
         body: JSON.stringify(orderData)
     })
         .then(response => {
+            // Проверка на ошибки ответа сервера
             if (!response.ok) {
-                throw new Error('Network response was not ok');
+                return response.json().then(data => {
+                    // Обрабатываем ошибку с сервера
+                    throw new Error(data.message || 'Unknown error');
+                });
             }
-            console.log('Order success' +
-                'fully submitted!');
-            // Перенаправление на страницу заказа
-            //window.location.href = '/orderStatus';
+            return response.json();  // Если все ок, разбираем успешный ответ
+        })
+        .then(data => {
+            console.log('Order processed successfully', data);
+            showNotification('Order processed successfully', true);
         })
         .catch(error => {
-            console.error('Error:', error);
+            console.error('Error:', error.message);
+            showNotification(error.message, false);  // Ошибка с сервера
         });
+
+
+
+
+
 
     // fetch('/ordering', {
     //     method: 'POST',
@@ -241,6 +253,37 @@ checkoutButton.addEventListener('click', () => {
     //     });
 
 });
+
+
+function showNotification(message, isSuccess = false) {
+    // Создаем элемент уведомления
+    const notification = document.createElement('div');
+    notification.textContent = message;
+
+    // Устанавливаем цвет фона в зависимости от типа уведомления
+    notification.style.position = 'fixed';
+    notification.style.top = '20px';
+    notification.style.right = '20px';
+    notification.style.backgroundColor = isSuccess ? '#4CAF50' : '#f44336'; // Зеленый для успеха, красный для ошибки
+    notification.style.color = 'white';
+    notification.style.padding = '10px 20px';
+    notification.style.borderRadius = '5px';
+    notification.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
+    notification.style.fontSize = '16px';
+    notification.style.zIndex = '9999'; // Убедитесь, что окно сверху
+
+    // Добавляем уведомление в body
+    document.body.appendChild(notification);
+
+    // Через 2 секунды скрыть уведомление
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        setTimeout(() => {
+            notification.remove();
+        }, 500); // Удаление после анимации исчезновения
+    }, 5000);
+}
+
 
 function toggleFields() {
     const isDelivery = document.querySelector('input[name="delivery"]:checked').value === 'delivery';

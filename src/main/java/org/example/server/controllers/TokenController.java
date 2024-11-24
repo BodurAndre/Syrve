@@ -140,7 +140,7 @@ public class TokenController {
         }
     }
 
-    @GetMapping("/saveProducts")
+    @GetMapping("/admin/saveProducts")
     public String saveProducts(Model model) {
         if (apiLoginNotFound) {
             log.warn("API login not found or incorrect.");
@@ -154,12 +154,12 @@ public class TokenController {
             idRestaurant = restaurantService.getIdRestaurant();
         } catch (NoSuchElementException e) {
             getOrganization(); // Initialize idRestaurant if not found
-            return "redirect:/saveProducts";
+            return "redirect:/admin/saveProducts";
         }
 
         if (idRestaurant == null || idRestaurant.isEmpty()) {
             getOrganization(); // Initialize idRestaurant if not found
-            return "redirect:/saveProducts";
+            return "redirect:/admin/saveProducts";
         }
 
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -183,11 +183,11 @@ public class TokenController {
         } catch (HttpClientErrorException e) {
             if (e.getRawStatusCode() == 401) {
                 getToken();
-                return "redirect:/saveProducts";
+                return "redirect:/admin/saveProducts";
             }
             if (e.getRawStatusCode() == 400){
                 getOrganization();
-                return "redirect:/saveProducts";
+                return "redirect:/admin/saveProducts";
             }
             else {
                 model.addAttribute("Error", "Ошибка при сохранении продуктов: " + e.getMessage());
@@ -199,7 +199,7 @@ public class TokenController {
         return "test/tokenResult";
     }
 
-    @GetMapping("/saveAdress")
+    @GetMapping("/admin/saveAddress")
     public String saveCities(Model model){
         if (apiLoginNotFound) {
             log.warn("API login not found or incorrect.");
@@ -213,12 +213,12 @@ public class TokenController {
             idRestaurant = restaurantService.getIdRestaurant();
         } catch (NoSuchElementException e) {
             getOrganization(); // Initialize idRestaurant if not found
-            return "redirect:/saveAdress";
+            return "redirect:/admin/saveAddress";
         }
 
         if (idRestaurant == null || idRestaurant.isEmpty()) {
             getOrganization(); // Initialize idRestaurant if not found
-            return "redirect:/saveAdress";
+            return "redirect:/admin/saveAddress";
         }
 
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -259,11 +259,11 @@ public class TokenController {
         } catch (HttpClientErrorException e) {
             if (e.getRawStatusCode() == 401) {
                 getToken();
-                return "redirect:/saveAdress";
+                return "redirect:/admin/saveAddress";
             }
             if (e.getRawStatusCode() == 400){
                 getOrganization();
-                return "redirect:/saveAdress";
+                return "redirect:/admin/saveAddress";
             }
             else {
                 model.addAttribute("Error", "Ошибка при сохранении городов: " + e.getMessage());
@@ -277,10 +277,10 @@ public class TokenController {
     }
 
 
-    @RequestMapping(value = "/resetToken", method = RequestMethod.POST)
+    @RequestMapping(value = "/admin/resetToken", method = RequestMethod.POST)
     public String resetToken() {
         token = null;
-        return "redirect:/viewRestaurant";
+        return "redirect:/admin/viewRestaurant";
     }
 
     @GetMapping("/api/menu")
@@ -315,7 +315,7 @@ public class TokenController {
         }
     }
 
-    @GetMapping("/getTerminalGroup")
+    @GetMapping("/admin/getTerminalGroup")
     public String TerminalGroup(Model model) {
         if (apiLoginNotFound) {
             log.warn("API login not found or incorrect.");
@@ -330,13 +330,13 @@ public class TokenController {
         } catch (NoSuchElementException e) {
             getOrganization(); // Initialize idRestaurant if not found
             requestAttempts++;
-            return "redirect:/getTerminalGroup";
+            return "redirect:/admin/getTerminalGroup";
         }
 
         if (idRestaurant == null || idRestaurant.isEmpty()) {
             getOrganization(); // Initialize idRestaurant if not found
             requestAttempts++;
-            return "redirect:/getTerminalGroup";
+            return "redirect:/admin/getTerminalGroup";
         }
 
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -362,12 +362,12 @@ public class TokenController {
             if (e.getRawStatusCode() == 401 && requestAttempts<10) {
                 getToken();
                 requestAttempts++;
-                return "redirect:/getTerminalGroup";
+                return "redirect:/admin/getTerminalGroup";
             }
             if (e.getRawStatusCode() == 400 && requestAttempts<10) {
                 getOrganization();
                 requestAttempts++;
-                return "redirect:/getTerminalGroup";
+                return "redirect:/admin/getTerminalGroup";
             } else {
                 model.addAttribute("Error", "Ошибка при сохранении терминала: " + e.getMessage() + "Код ошибки" + e.getRawStatusCode()) ;
             }

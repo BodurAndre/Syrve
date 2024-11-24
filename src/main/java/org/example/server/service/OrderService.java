@@ -1,14 +1,19 @@
 package org.example.server.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.example.server.models.orders.*;
 import org.springframework.stereotype.Service;
 import org.example.server.repositories.orders.*;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 public class OrderService {
 
@@ -19,6 +24,8 @@ public class OrderService {
     private final OrderPaymentRepository OrderPaymentRepository;
     private final OrderRepository OrderRepository;
 
+
+    private ObjectMapper objectMapper = new ObjectMapper();
 
     public OrderService(OrderAdressRepositry orderAdressRepositry,
                         OrderCustomerRepository orderCustomerRepository,
@@ -35,12 +42,28 @@ public class OrderService {
     }
 
     @Transactional
-    public void processOrder(JsonNode orderJson) {
+    public void processOrder(JsonNode orderJson, String ipAddress) {
+//        List<Order> orders = OrderRepository.findOrdersByIpAddress(ipAddress);
+//
+//        if (!orders.isEmpty()) {
+//            Order lastOrder = orders.get(0);
+//            LocalDateTime now = LocalDateTime.now();
+//            LocalDateTime lastOrderTime = lastOrder.getCreatedAt();
+//
+//            long minutesSinceLastOrder = ChronoUnit.MINUTES.between(lastOrderTime, now);
+//
+//            if (minutesSinceLastOrder < 30) {
+//                log.error("You can only place one order every 30 minutes.");
+//                throw new RuntimeException("Order limit exceeded");
+//            }
+//        }
+
         Order order = new Order();
         order.setPhone(orderJson.has("phone") ? orderJson.get("phone").asText() : null);
         order.setOrderTypeId(orderJson.has("orderTypeId") ? orderJson.get("orderTypeId").asText() : null);
         order.setComment(orderJson.has("comment") ? orderJson.get("comment").asText() : null);
-
+        order.setCreatedAt(LocalDateTime.now());
+        order.setIpAddress(ipAddress);
         // Сохраняем Address (или null)
         JsonNode addressJson = orderJson.get("deliveryPoint").get("address");
         if (addressJson != null) {
@@ -125,9 +148,16 @@ public class OrderService {
             order.setPayments(payments);
         }
 
-        order.setJson(orderJson.asText());
-        // Финальное сохранение Order с зависимостями
-        OrderRepository.save(order);
+        try {
+            String jsonString = objectMapper.writeValueAsString(orderJson); // Сериализация JSON в строку
+            order.setJson(jsonString); // Сохраняем сериализованный JSON в объект заказа
+            // Сохранение в базу данных
+            OrderRepository.save(order);
+        } catch (Exception e) {
+            // Обработка исключений
+            e.printStackTrace();
+        }
+
     }
 
 

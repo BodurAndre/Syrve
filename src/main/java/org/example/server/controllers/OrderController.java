@@ -3,7 +3,9 @@ package org.example.server.controllers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import lombok.extern.slf4j.Slf4j;
 import org.example.server.DTO.Adress.CitiesDTO;
 import org.example.server.DTO.Adress.StreetsDTO;
 import org.example.server.DTO.ProductDTO;
@@ -19,12 +21,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
+import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Controller
 public class OrderController {
 
@@ -39,10 +43,6 @@ public class OrderController {
         this.orderService = orderService;
     }
 
-    @GetMapping("/orderStatus")
-    public String orderStatus() {
-        return "test/OrderStatus";
-    }
 
     @GetMapping("/order")
     public String showOrder() {
@@ -82,17 +82,50 @@ public class OrderController {
     }
 
     @PostMapping("/saveOrder")
-    public ResponseEntity<?> saveOrder(@RequestBody JsonNode json) {
+    public ResponseEntity<?> saveOrder(@RequestBody JsonNode json, HttpServletRequest request) {
+        String ipAddress = request.getRemoteAddr();
         try {
-            System.out.println("Received JSON: " + json.toString());
-            orderService.processOrder(json);
-            return ResponseEntity.ok("Order saved successfully.");
-        } catch (Exception e) {
-            System.err.println("Error: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error saving order: " + e.getMessage());
+            orderService.processOrder(json, ipAddress);
+            return ResponseEntity.ok(new SuccessResponse("Order processed successfully"));
+        } catch (RuntimeException ex) {
+            // Возвращаем ошибку в виде объекта JSON
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorResponse(ex.getMessage()));
         }
     }
 
+    // Класс для успешного ответа
+    public class SuccessResponse {
+        private String message;
+
+        public SuccessResponse(String message) {
+            this.message = message;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public void setMessage(String message) {
+            this.message = message;
+        }
+    }
+
+    // Класс для ошибки
+    public class ErrorResponse {
+        private String message;
+
+        public ErrorResponse(String message) {
+            this.message = message;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public void setMessage(String message) {
+            this.message = message;
+        }
+    }
 
 }

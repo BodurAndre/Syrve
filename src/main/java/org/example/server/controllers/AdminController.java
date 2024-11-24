@@ -10,12 +10,21 @@ import org.springframework.web.bind.annotation.*;
 import java.util.NoSuchElementException;
 
 @Controller
-public class RestaurantController {
-
+public class AdminController {
     @Autowired
     private RestaurantService restaurantService;
 
-    @RequestMapping(value = "/viewRestaurant", method = RequestMethod.GET)
+    @RequestMapping(value = "/admin", method = RequestMethod.GET)
+    public String test(){
+        return "test/home";
+    }
+
+    @GetMapping("/admin/orders")
+    public String orderStatus() {
+        return "test/OrderStatus";
+    }
+
+    @RequestMapping(value = "/admin/viewRestaurant", method = RequestMethod.GET)
     public String viewRestaurant(Model model) {
         try {
             // Получение информации о ресторане через сервис
@@ -34,13 +43,10 @@ public class RestaurantController {
         return "test/restaurant";
     }
 
-    @PostMapping("/updateApiLogin")
+    @PostMapping("/admin/updateApiLogin")
     public String updateApiLogin(@RequestParam("apiLogin") String newApiLogin) {
-        // Обновляем значение apiLogin через сервис
         restaurantService.updateApiLogin(newApiLogin);
-
-        // Перенаправляем пользователя обратно на страницу с информацией
-        return "redirect:/viewRestaurant";
+        return "redirect:/admin/viewRestaurant";
     }
 
     @GetMapping("/getNameRestaurant")
@@ -51,4 +57,3 @@ public class RestaurantController {
         return nameRestaurant;
     }
 }
-

@@ -25,7 +25,8 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())  // Отключение CSRF защиты
                 .authorizeHttpRequests(authz -> authz
-                        .requestMatchers("/login", "/register", "/home/**", "/js/**", "/jsTest/**", "/css/**", "/fonts.flaticon/**", "/images/**", "/scss/**", "/jsProduct").permitAll()
+                        .requestMatchers("/login","/**", "/register", "/js/**", "/jsTest/**", "/css/**", "/fonts.flaticon/**", "/images/**", "/scss/**", "/jsProduct").permitAll()
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form

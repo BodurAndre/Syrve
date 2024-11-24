@@ -35,9 +35,6 @@ public class HomeController {
     @RequestMapping(value = "/contact", method = RequestMethod.GET)
     public String contact(){return "/Web/contact";}
 
-    @RequestMapping(value = "/home", method = RequestMethod.GET)
-    public String test(){
-        return "test/home";
-    }
+
 
 }

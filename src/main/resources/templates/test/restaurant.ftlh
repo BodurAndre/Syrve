@@ -18,7 +18,7 @@
 </#if>
 
 <!-- Форма для изменения apiLogin -->
-<form action="/updateApiLogin" method="post">
+<form action="/admin/updateApiLogin" method="post">
     <label for="apiLogin">API Login:</label>
     <#if apiLogin??>
         <input type="text" id="apiLogin" name="apiLogin" value="${apiLogin}" required />
@@ -37,7 +37,7 @@
 </#if>
 
 
-<form action="/resetToken" method="post">
+<form action="/admin/resetToken" method="post">
     <button type="submit">Сбросить токен</button>
 </form>
 
