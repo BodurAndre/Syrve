@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // В случае ошибки обновить текст всех элементов с ошибочным сообщением
             const elements = document.querySelectorAll('.restaurant-name');
             elements.forEach(element => {
-                element.textContent = 'Не удалось загрузить название ресторана.';
+                element.textContent = 'ОШИБКА';
             });
         });
 });

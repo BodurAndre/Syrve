@@ -1,4 +1,5 @@
 let cart = [];
+
 document.addEventListener("DOMContentLoaded", function () {
     const savedCart = localStorage.getItem('cart');
     if (savedCart) {

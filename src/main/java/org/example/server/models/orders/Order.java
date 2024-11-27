@@ -52,6 +52,9 @@ public class Order {
     @Column(name = "comment")
     private String comment;
 
+    @Column(name = "status")
+    private String status;
+
     @Column(name = "JSON", columnDefinition = "TEXT")
     private String json;
 }

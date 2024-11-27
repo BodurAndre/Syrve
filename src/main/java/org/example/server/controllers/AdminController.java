@@ -1,20 +1,116 @@
 package org.example.server.controllers;
 
+import org.example.server.DTO.Admin.CityWithStreetsDTO;
+import org.example.server.DTO.Admin.StreetDTO;
 import org.example.server.models.RestaurantInfo;
+import org.example.server.models.adress.Cities;
+import org.example.server.models.adress.Streets;
+import org.example.server.repositories.CitiesRepository;
+import org.example.server.repositories.StreetsRepository;
 import org.example.server.service.RestaurantService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.NoSuchElementException;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Controller
 public class AdminController {
     @Autowired
     private RestaurantService restaurantService;
 
-    @RequestMapping(value = "/admin", method = RequestMethod.GET)
+    @PostMapping("/admin/updateApiLogin")
+    public ResponseEntity<String> updateApiLogin(@RequestParam("apiLogin") String newApiLogin) {
+        if (newApiLogin == null || newApiLogin.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("API Login не может быть пустым.");
+        }
+
+        // Обновление API Login через сервис
+        restaurantService.updateApiLogin(newApiLogin);
+
+        return ResponseEntity.ok("API Login успешно обновлен.");
+    }
+
+
+    @GetMapping("/getNameRestaurant")
+    @ResponseBody
+    public String getNameRestaurant() {
+        String nameRestaurant = restaurantService.getNameRestaurant();
+        System.out.println("getNameRestaurant" + nameRestaurant);
+        return nameRestaurant;
+    }
+
+    @RequestMapping(value = "/admin/viewRestaurant", method = RequestMethod.GET)
+    @ResponseBody
+    public ResponseEntity<?> viewRestaurant() {
+        try {
+            RestaurantInfo restaurantInfo = restaurantService.getInfoRestaurant();
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("idRestaurant", restaurantInfo.getIdRestaurant());
+            response.put("apiLogin", restaurantInfo.getApiLogin());
+            response.put("nameRestaurant", restaurantInfo.getNameRestaurant());
+
+            return ResponseEntity.ok(response);
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @RestController
+    @RequestMapping("/api/locations")
+    public class LocationController {
+        @Autowired
+        private CitiesRepository citiesRepository;
+
+        @Autowired
+        private StreetsRepository streetsRepository;
+
+        @GetMapping("/all")
+        public ResponseEntity<List<CityWithStreetsDTO>> getAllCitiesWithStreets() {
+            List<Cities> cities = citiesRepository.findAll();
+            List<CityWithStreetsDTO> result = new ArrayList<>();
+
+            for (Cities city : cities) {
+                CityWithStreetsDTO dto = new CityWithStreetsDTO();
+                dto.setCityName(city.getCity());
+                dto.setCityId(city.getCityId());
+                dto.setDeleted(city.isDeleted());
+
+                List<Streets> streets = streetsRepository.findStreetsById(city.getCityId());
+                List<StreetDTO> streetDTOs = streets.stream()
+                        .map(street -> {
+                            StreetDTO streetDTO = new StreetDTO();
+                            streetDTO.setStreetName(street.getName());
+                            streetDTO.setStreetId(street.getStreetId());
+                            streetDTO.setDeleted(street.isDeleted());
+                            return streetDTO;
+                        })
+                        .collect(Collectors.toList());
+
+                dto.setStreets(streetDTOs);
+                result.add(dto);
+            }
+
+            return ResponseEntity.ok(result);
+        }
+    }
+
+
+
+
+    // Простые запросы
+
+    @GetMapping(value = "/admin/info")
+    public String home(){
+        return "/admin/restaurant-info";
+    }
+
+    @GetMapping(value = "/admin")
     public String test(){
         return "test/home";
     }
@@ -24,36 +120,19 @@ public class AdminController {
         return "test/OrderStatus";
     }
 
-    @RequestMapping(value = "/admin/viewRestaurant", method = RequestMethod.GET)
-    public String viewRestaurant(Model model) {
-        try {
-            // Получение информации о ресторане через сервис
-            RestaurantInfo restaurantInfo = restaurantService.getInfoRestaurant();
-
-            // Добавление атрибутов в модель для отображения на странице
-            model.addAttribute("idRestaurant", restaurantInfo.getIdRestaurant());
-            model.addAttribute("apiLogin", restaurantInfo.getApiLogin()); // Если apiLogin является частью RestaurantInfo
-            model.addAttribute("nameRestaurant", restaurantInfo.getNameRestaurant());
-        } catch (NoSuchElementException e) {
-            // Если данных нет, перенаправление на страницу ошибки
-            return "test/restaurant";
-        }
-
-        // Возврат к представлению с информацией о ресторане
-        return "test/restaurant";
+    @GetMapping("/admin/address")
+    public String address() {
+        return "/admin/cities-streets";
     }
 
-    @PostMapping("/admin/updateApiLogin")
-    public String updateApiLogin(@RequestParam("apiLogin") String newApiLogin) {
-        restaurantService.updateApiLogin(newApiLogin);
-        return "redirect:/admin/viewRestaurant";
+    @GetMapping("/admin/products")
+    public String products() {
+        return "/admin/productlist";
     }
 
-    @GetMapping("/getNameRestaurant")
-    @ResponseBody
-    public String getNameRestaurant() {
-        String nameRestaurant = restaurantService.getNameRestaurant();
-        System.out.println("getNameRestaurant" + nameRestaurant);
-        return nameRestaurant;
+    @GetMapping("/admin/salesList")
+    public String salesList() {
+        return "/admin/salesList";
     }
+
 }

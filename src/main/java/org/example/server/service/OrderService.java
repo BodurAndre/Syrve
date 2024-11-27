@@ -64,6 +64,7 @@ public class OrderService {
         order.setComment(orderJson.has("comment") ? orderJson.get("comment").asText() : null);
         order.setCreatedAt(LocalDateTime.now());
         order.setIpAddress(ipAddress);
+        order.setStatus("Pending");
         // Сохраняем Address (или null)
         JsonNode addressJson = orderJson.get("deliveryPoint").get("address");
         if (addressJson != null) {

@@ -78,4 +78,6 @@ public class AuthController {
         securityContext.setAuthentication(null);
         return "redirect:/login";
     }
+
+
 }

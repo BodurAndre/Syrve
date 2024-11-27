@@ -199,88 +199,11 @@ public class TokenController {
         return "test/tokenResult";
     }
 
-    @GetMapping("/admin/saveAddress")
-    public String saveCities(Model model){
-        if (apiLoginNotFound) {
-            log.warn("API login not found or incorrect.");
-            model.addAttribute("Error", "Не введен логин или он не верный");
-            apiLoginNotFound = false;
-            return "test/tokenResult";
-        }
 
-        String idRestaurant;
-        try {
-            idRestaurant = restaurantService.getIdRestaurant();
-        } catch (NoSuchElementException e) {
-            getOrganization(); // Initialize idRestaurant if not found
-            return "redirect:/admin/saveAddress";
-        }
-
-        if (idRestaurant == null || idRestaurant.isEmpty()) {
-            getOrganization(); // Initialize idRestaurant if not found
-            return "redirect:/admin/saveAddress";
-        }
-
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("Authorization", "Bearer " + token);
-
-        String requestBody = "{\"organizationIds\": [\"" + idRestaurant + "\"]}";
-        HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
-
-        try {
-            ResponseEntity<String> responseEntity = restTemplate.exchange(
-                    CITIES_URL,
-                    HttpMethod.POST,
-                    requestEntity,
-                    String.class
-            );
-
-            model.addAttribute("body", responseEntity.getBody());
-            JsonNode rootNode = mapper.readTree(responseEntity.getBody());
-            JsonNode cities = rootNode.path("cities").get(0).path("items");
-
-            adressService.saveCityFromJson(cities);
-
-            for (JsonNode city : cities) {
-                String cityID = city.path("id").asText();
-                requestBody = "{\"organizationId\": \"" + idRestaurant + "\",\"cityId\":\"" + cityID + "\"}";
-                requestEntity = new HttpEntity<>(requestBody, headers);
-                responseEntity = restTemplate.exchange(
-                        STREET_URL,
-                        HttpMethod.POST,
-                        requestEntity,
-                        String.class
-                );
-                rootNode = mapper.readTree(responseEntity.getBody());
-                JsonNode street = rootNode.path("streets");
-                adressService.saveStreetFromJson(street, cityID);
-
-            }
-        } catch (HttpClientErrorException e) {
-            if (e.getRawStatusCode() == 401) {
-                getToken();
-                return "redirect:/admin/saveAddress";
-            }
-            if (e.getRawStatusCode() == 400){
-                getOrganization();
-                return "redirect:/admin/saveAddress";
-            }
-            else {
-                model.addAttribute("Error", "Ошибка при сохранении городов: " + e.getMessage());
-            }
-        } catch (JsonMappingException e) {
-            throw new RuntimeException(e);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-        return "test/tokenResult";
-    }
-
-
-    @RequestMapping(value = "/admin/resetToken", method = RequestMethod.POST)
-    public String resetToken() {
-        token = null;
-        return "redirect:/admin/viewRestaurant";
+    @PostMapping("/admin/resetToken")
+    public ResponseEntity<String> resetToken() {
+        token = null; // Обнуляем токен
+        return ResponseEntity.ok("Токен успешно сброшен.");
     }
 
     @GetMapping("/api/menu")
@@ -393,6 +316,7 @@ public class TokenController {
 
             // Попытка получить idRestaurant
             String idRestaurant = getOrFetchIdRestaurant();
+
             if (idRestaurant == null || idRestaurant.isEmpty()) {
                 log.warn("Failed to fetch or initialize Restaurant ID.");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -483,5 +407,89 @@ public class TokenController {
             }
         }
         return null; // Если не удалось обработать заказ
+    }
+
+    @GetMapping("/admin/saveAddress")
+    public ResponseEntity<?> saveCities() {
+        if (apiLoginNotFound) {
+            log.warn("API login not found or incorrect.");
+            apiLoginNotFound = false;
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("API login not found or incorrect.");
+        }
+
+        String idRestaurant;
+        try {
+            idRestaurant = restaurantService.getIdRestaurant();
+        } catch (NoSuchElementException e) {
+            getOrganization(); // Initialize idRestaurant if not found
+            return ResponseEntity.status(HttpStatus.TEMPORARY_REDIRECT)
+                    .header("Location", "/admin/saveAddress")
+                    .build();
+        }
+
+        if (idRestaurant == null || idRestaurant.isEmpty()) {
+            getOrganization(); // Initialize idRestaurant if not found
+            return ResponseEntity.status(HttpStatus.TEMPORARY_REDIRECT)
+                    .header("Location", "/admin/saveAddress")
+                    .build();
+        }
+
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("Authorization", "Bearer " + token);
+
+        String requestBody = "{\"organizationIds\": [\"" + idRestaurant + "\"]}";
+        HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
+
+        try {
+            ResponseEntity<String> responseEntity = restTemplate.exchange(
+                    CITIES_URL,
+                    HttpMethod.POST,
+                    requestEntity,
+                    String.class
+            );
+
+            JsonNode rootNode = mapper.readTree(responseEntity.getBody());
+            JsonNode cities = rootNode.path("cities").get(0).path("items");
+
+            adressService.saveCityFromJson(cities);
+
+            for (JsonNode city : cities) {
+                String cityID = city.path("id").asText();
+                requestBody = "{\"organizationId\": \"" + idRestaurant + "\",\"cityId\":\"" + cityID + "\"}";
+                requestEntity = new HttpEntity<>(requestBody, headers);
+                responseEntity = restTemplate.exchange(
+                        STREET_URL,
+                        HttpMethod.POST,
+                        requestEntity,
+                        String.class
+                );
+                rootNode = mapper.readTree(responseEntity.getBody());
+                JsonNode street = rootNode.path("streets");
+                adressService.saveStreetFromJson(street, cityID);
+            }
+        } catch (HttpClientErrorException e) {
+            if (e.getRawStatusCode() == 401) {
+                getToken();
+                return ResponseEntity.status(HttpStatus.TEMPORARY_REDIRECT)
+                        .header("Location", "/admin/saveAddress")
+                        .build();
+            }
+            if (e.getRawStatusCode() == 400) {
+                getOrganization();
+                return ResponseEntity.status(HttpStatus.TEMPORARY_REDIRECT)
+                        .header("Location", "/admin/saveAddress")
+                        .build();
+            }
+            log.error("Error saving cities: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error saving cities: " + e.getMessage());
+        } catch (JsonProcessingException e) {
+            log.error("Error parsing JSON: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error processing response JSON: " + e.getMessage());
+        }
+
+        return ResponseEntity.ok("Streets updated successfully.");
     }
 }
