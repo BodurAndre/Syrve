@@ -49,6 +49,7 @@ function displayDishesInTable(dishes, products) {
     const table = $('.datanew').DataTable();
 
     dishes.forEach(dish => {
+        table.clear();
         const row = [
             `<label class="checkboxs">
                 <input type="checkbox">

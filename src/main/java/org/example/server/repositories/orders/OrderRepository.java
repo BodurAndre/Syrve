@@ -10,6 +10,6 @@ import java.util.List;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Long> {
-    @Query("SELECT o FROM Order o WHERE o.ipAddress = :ipAddress ORDER BY o.createdAt DESC")
-    List<Order> findOrdersByIpAddress(@Param("ipAddress") String ipAddress);
+    @Query("SELECT o FROM Order o WHERE o.id = :id ORDER BY o.createdAt DESC")
+    Order findOrdersById(@Param("id") String id);
 }

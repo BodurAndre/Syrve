@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
+import org.example.server.DTO.Admin.Order.OrderDTO;
 import org.example.server.models.orders.*;
 import org.springframework.stereotype.Service;
 import org.example.server.repositories.orders.*;
@@ -64,7 +65,7 @@ public class OrderService {
         order.setComment(orderJson.has("comment") ? orderJson.get("comment").asText() : null);
         order.setCreatedAt(LocalDateTime.now());
         order.setIpAddress(ipAddress);
-        order.setStatus("Pending");
+        order.setStatus(false);
         // Сохраняем Address (или null)
         JsonNode addressJson = orderJson.get("deliveryPoint").get("address");
         if (addressJson != null) {
@@ -161,6 +162,31 @@ public class OrderService {
 
     }
 
+    @Transactional
+    public List<OrderDTO> getAllorder() {
+        List<Order> orders = OrderRepository.findAll();
+        List<OrderDTO> orderDTOList = new ArrayList<>();
+        for (Order order : orders) {
+            OrderDTO orderDTO = new OrderDTO();
+            orderDTO.setId(order.getId());
+            orderDTO.setData(order.getCreatedAt().toString());
+            orderDTO.setStatus(order.isStatus());
+            orderDTO.setPhone(order.getPhone());
+            if (!order.getPayments().isEmpty()) {
+                Payment firstPayment = order.getPayments().get(0);
+                orderDTO.setPayment(firstPayment.isProcessedExternally());
+                orderDTO.setTotal(firstPayment.getSum());
+            }
+            orderDTOList.add(orderDTO);
+        }
+        return orderDTOList;
+    }
 
-
+    @Transactional
+    public Order getOrder(String id) {
+        Order order = OrderRepository.findOrdersById(id);
+        order.setStatus(true);
+        OrderRepository.save(order);
+        return order;
+    }
 }

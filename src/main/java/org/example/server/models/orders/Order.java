@@ -53,7 +53,7 @@ public class Order {
     private String comment;
 
     @Column(name = "status")
-    private String status;
+    private boolean status;
 
     @Column(name = "JSON", columnDefinition = "TEXT")
     private String json;

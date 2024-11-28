@@ -1,12 +1,15 @@
 package org.example.server.controllers;
 
 import org.example.server.DTO.Admin.CityWithStreetsDTO;
+import org.example.server.DTO.Admin.Order.OrderDTO;
 import org.example.server.DTO.Admin.StreetDTO;
 import org.example.server.models.RestaurantInfo;
 import org.example.server.models.adress.Cities;
 import org.example.server.models.adress.Streets;
+import org.example.server.models.orders.Order;
 import org.example.server.repositories.CitiesRepository;
 import org.example.server.repositories.StreetsRepository;
+import org.example.server.service.OrderService;
 import org.example.server.service.RestaurantService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -22,6 +25,8 @@ import java.util.stream.Collectors;
 public class AdminController {
     @Autowired
     private RestaurantService restaurantService;
+    @Autowired
+    private OrderService orderService;
 
     @PostMapping("/admin/updateApiLogin")
     public ResponseEntity<String> updateApiLogin(@RequestParam("apiLogin") String newApiLogin) {
@@ -97,6 +102,17 @@ public class AdminController {
             }
 
             return ResponseEntity.ok(result);
+        }
+    }
+
+    @RequestMapping(value = "/admin/viewOrder", method = RequestMethod.GET)
+    @ResponseBody
+    public ResponseEntity<?> viewOrder() {
+        try {
+            List<OrderDTO> Order = orderService.getAllorder();
+            return ResponseEntity.ok(Order);
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 

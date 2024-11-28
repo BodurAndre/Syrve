@@ -267,10 +267,13 @@
 <div class="page-wrapper">
 <div class="content">
 <div class="page-header">
-<div class="page-title">
-<h4>Sales List</h4>
-<h6>Manage your sales</h6>
-</div>
+ <div class="page-title">
+ <h4>Sales List</h4>
+ <h6>Manage your sales</h6>
+ </div>
+ <div class="page-btn">
+  <a id="getAddress" href="" class="btn btn-added">Обновить список заказов</a>
+ </div>
 </div>
 
 <div class="card">
@@ -336,8 +339,8 @@
 <span class="checkmarks"></span>
 </label>
 </th>
+ <th>ID</th>
 <th>Date</th>
-<th>ID</th>
  <th>Phone</th>
 <th>Status</th>
 <th>Payment</th>
@@ -345,39 +348,9 @@
 <th class="text-center">Action</th>
 </tr>
 </thead>
-<tbody>
-<tr>
-<td>
-<label class="checkboxs">
-<input type="checkbox">
-<span class="checkmarks"></span>
-</label>
-</td>
- <td>19 Nov 2022</td>
-<td>walk-in-customer</td>
- <td>Номер телефона</td>
-<td><span class="badges bg-lightgreen">Completed</span></td>
-<td><span class="badges bg-lightgreen">Paid</span></td>
-<td class="text-red">0.00</td>
-<td class="text-center">
-<a class="action-set" href="javascript:void(0);" data-bs-toggle="dropdown" aria-expanded="true">
-<i class="fa fa-ellipsis-v" aria-hidden="true"></i>
-</a>
-<ul class="dropdown-menu">
-<li>
-<a href="sales-details.html" class="dropdown-item"><img src="/assets/img/icons/eye1.svg" class="me-2" alt="img">Sale Detail</a>
-</li>
- <li>
-  <a href="sales-details.html" class="dropdown-item"><img src="/assets/img/icons/download.svg" class="me-2" alt="img">Checkout</a>
- </li>
-<li>
-<a href="javascript:void(0);" class="dropdown-item confirm-text"><img src="/assets/img/icons/delete1.svg" class="me-2" alt="img">Delete Sale</a>
-</li>
-</ul>
-</td>
-</tr>
+ <tbody id="orders">
 
-</tbody>
+ </tbody>
 </table>
 </div>
 </div>
@@ -585,5 +558,7 @@
 
 <script src="/assets/js/script.js"></script>
 <script src="/js/GetInformationRestaurant.js"></script>
+
+<script src="/assets/js/getOrders.js"></script>
 </body>
 </html>

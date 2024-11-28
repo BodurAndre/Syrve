@@ -227,31 +227,6 @@ checkoutButton.addEventListener('click', () => {
             console.error('Error:', error.message);
             showNotification(error.message, false);  // Ошибка с сервера
         });
-
-
-
-
-
-
-    // fetch('/ordering', {
-    //     method: 'POST',
-    //     headers: {
-    //         'Content-Type': 'application/json',
-    //     },
-    //     body: JSON.stringify(orderData)
-    // })
-    //     .then(response => {
-    //         if (!response.ok) {
-    //             throw new Error('Network response was not ok');
-    //         }
-    //         console.log('Order successfully submitted!');
-    //         // Перенаправление на страницу заказа
-    //         //window.location.href = '/orderStatus';
-    //     })
-    //     .catch(error => {
-    //         console.error('Error:', error);
-    //     });
-
 });
 
 

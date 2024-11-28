@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.example.server.models.OrderRequest;
+import org.example.server.models.orders.Order;
 import org.example.server.models.products.Dish;
 import org.example.server.models.products.DishModifier;
 import org.example.server.models.products.DishWithModifiers;
@@ -13,6 +14,7 @@ import org.example.server.models.products.Product;
 import org.example.server.repositories.DishModifierRepository;
 import org.example.server.repositories.DishRepository;
 import org.example.server.service.AdressService;
+import org.example.server.service.OrderService;
 import org.example.server.service.ProductService;
 import org.example.server.service.RestaurantService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,12 +43,14 @@ public class TokenController {
     private final DishModifierRepository dishModifierRepository;
     private final RestaurantService restaurantService;
     private final AdressService adressService;
+    private final OrderService orderService;
 
-    public TokenController(ProductService productService, DishModifierRepository dishModifierRepository, RestaurantService restaurantService, AdressService adressService) {
+    public TokenController(ProductService productService, DishModifierRepository dishModifierRepository, RestaurantService restaurantService, AdressService adressService, OrderService orderService) {
         this.productService = productService;
         this.dishModifierRepository = dishModifierRepository;
         this.restaurantService = restaurantService;
         this.adressService = adressService;
+        this.orderService = orderService;
     }
 
     private static final String API_IIKO = "https://api-ru.iiko.services/api/";
@@ -304,7 +308,9 @@ public class TokenController {
 
 
     @PostMapping("/ordering")
-    public ResponseEntity<?> processOrder(@RequestBody String json) {
+    public ResponseEntity<?> processOrder(@RequestBody String id) {
+        log.info("Order ID: " + id);
+        Order order = orderService.getOrder(id);
         try {
             // Проверка API логина
             if (apiLoginNotFound) {
@@ -324,7 +330,7 @@ public class TokenController {
             }
 
             // Преобразование JSON в объект OrderRequest
-            OrderRequest newOrderRequest = createOrderRequest(json, idRestaurant);
+            OrderRequest newOrderRequest = createOrderRequest(order.getJson(), idRestaurant);
 
 
             // Попытка отправить заказ

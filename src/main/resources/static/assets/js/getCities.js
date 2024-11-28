@@ -6,6 +6,7 @@ $(document).ready(function () {
     const table = $('.datanew').DataTable();
 
     function loadCitiesWithStreets() {
+        table.clear();
         $.ajax({
             url: '/api/locations/all',
             method: 'GET',
