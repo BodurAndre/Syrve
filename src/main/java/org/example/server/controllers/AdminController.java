@@ -151,4 +151,18 @@ public class AdminController {
         return "/admin/salesList";
     }
 
+
+    @PostMapping("/editStatus")
+    public ResponseEntity<String> processOrder(@RequestBody String orderId) {
+        Order order = orderService.getOrder(orderId);
+        orderService.editStatusOrder(order, "Waiting");
+        return ResponseEntity.ok("Статус изменен");
+    }
+
+    @GetMapping(value = "/order/{id}")
+    public String getOrder(@PathVariable("id") String id) {
+        Order order = orderService.getOrder(id);
+        return "/admin/restaurant-info";
+    }
+
 }

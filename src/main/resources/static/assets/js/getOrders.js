@@ -7,6 +7,7 @@ $(document).ready(function () {
 
     function loadCitiesWithStreets() {
         table.clear();
+
         $.ajax({
             url: '/admin/viewOrder',
             method: 'GET',
@@ -17,26 +18,40 @@ $(document).ready(function () {
                         order.id,
                         order.data,
                         order.phone,
-                        order.status ? '<span class="badges bg-lightgreen">Completed</span>' : '<span class="badges bg-lightred">Pending</span>',
+                        `${order.status === "Pending" ? `<span class="badges bg-lightred">${order.status}</span>` : ''}
+                         ${order.status === "Completed" ? `<span class="badges bg-lightgreen">${order.status}</span>` : ''}
+                         ${order.status === "Waiting" ? `<span class="badges bg-lightyellow">${order.status}</span>` : ''}
+                         ${order.status === "ERROR" ? `<span class="badges bg-lightred">${order.status}</span>` : ''}`,
                         order.payment ? '<span class="badges bg-lightgreen">Paid</span>' : '<span class="badges bg-lightred">Due</span>',
-                        order.total,
+                        ` ${order.total} lei`,
                         `<div class="text-center">
-                    <a class="action-set" href="javascript:void(0);" data-bs-toggle="dropdown" aria-expanded="true">
-                        <i class="fa fa-ellipsis-v" aria-hidden="true"></i>
+            <a class="action-set" href="javascript:void(0);" data-bs-toggle="dropdown" aria-expanded="true">
+                <i class="fa fa-ellipsis-v" aria-hidden="true"></i>
+            </a>
+            <ul class="dropdown-menu">
+                <li>
+                    <a href="/order/${order.id}" class="dropdown-item">
+                    <img src="/assets/img/icons/eye1.svg" class="me-2" alt="img">Sale Detail
                     </a>
-                    <ul class="dropdown-menu">
-                        <li>
-                            <a href="#" class="dropdown-item"><img src="/assets/img/icons/eye1.svg" class="me-2" alt="img">Sale Detail</a>
-                        </li>
-                        ${order.status ? '' : `<li><a href="javascript:void(0);" class="dropdown-item setOrder" data-id="${order.id}"><img src="/assets/img/icons/download.svg" class="me-2" alt="img">Checkout</a></li>`}
-                        <li>
-                            <a href="javascript:void(0);" class="dropdown-item confirm-text"><img src="/assets/img/icons/delete1.svg" class="me-2" alt="img">Delete Sale</a>
-                        </li>
-                    </ul>
-                </div>`
+                </li>
+                        ${order.status === "Pending" || order.status === "ERROR"
+                            ? `<li>
+                        <a href="javascript:void(0);" class="dropdown-item setOrder" data-id="${order.id}">
+                            <img src="/assets/img/icons/download.svg" class="me-2" alt="img">Checkout
+                        </a>
+                    </li>`
+                            : ''}
+                <li>
+                    <a href="javascript:void(0);" class="dropdown-item confirm-text">
+                        <img src="/assets/img/icons/delete1.svg" class="me-2" alt="img">Delete Sale
+                    </a>
+                </li>
+            </ul>
+        </div>`
                     ];
                     table.row.add(row).draw();
                 });
+
             },
             error: function () {
                 alert('Ошибка при загрузке данных.');
@@ -44,8 +59,6 @@ $(document).ready(function () {
         });
 
     }
-
-
     // Загрузка данных при загрузке страницы
     loadCitiesWithStreets();
 
@@ -54,52 +67,79 @@ $(document).ready(function () {
         else showNotification('Произошла ошибка при обновлении данных', false);
     }
 
-    // $('#getAddress').on('click', function (event) {
-    //     // Предотвращаем стандартное поведение (например, отправка формы)
-    //     event.preventDefault();
-    //
-    //     $.ajax({
-    //         url: '/admin/saveAddress',
-    //         method: 'GET',
-    //         success: function () {
-    //             isModel = true;
-    //             // Предполагаем, что сервер возвращает строку или JSON-объект с сообщением
-    //             statusResponse = true;
-    //             showNotification('Города и улицы успешно обновлены', true); // Добавлено вызов уведомления
-    //             loadCitiesWithStreets();
-    //         },
-    //         error: function (xhr) {
-    //             // Обрабатываем сообщение об ошибке от сервера, если оно передается
-    //             isModel = true;
-    //             statusResponse = false;
-    //             showNotification('Произошла ошибка при обновлении данных', false); // Добавлено вызов уведомления
-    //             loadCitiesWithStreets();
-    //         }
-    //     });
-    // });
-
-    $(document).on('click', '.setOrder', function () {
-        const orderId = $(this).data('id'); // Получаем ID заказа
-        fetch('/ordering', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(orderId)
-        })
-
-            .then(response => {
+    $('#getAddress').on('click', function (event) {
+        // Предотвращаем стандартное поведение (например, отправка формы)
+        event.preventDefault();
+        $.ajax({
+            url: '/admin/saveAddress',
+            method: 'GET',
+            success: function () {
                 isModel = true;
+                // Предполагаем, что сервер возвращает строку или JSON-объект с сообщением
                 statusResponse = true;
-                showNotification('Заказ отправлен на кассу', true); // Добавлено вызов уведомления
+                showNotification('Заказы успешно обновлены', true); // Добавлено вызов уведомления
                 loadCitiesWithStreets();
-            })
-            .catch(error => {
+            },
+            error: function (xhr) {
+                // Обрабатываем сообщение об ошибке от сервера, если оно передается
                 isModel = true;
                 statusResponse = false;
                 showNotification('Произошла ошибка при обновлении данных', false); // Добавлено вызов уведомления
                 loadCitiesWithStreets();
-            });
+            }
+        });
+    });
+
+    $(document).on('click', '.setOrder', function () {
+        const orderId = $(this).data('id');
+
+        $.ajax({
+            url: '/editStatus',
+            method: 'POST',
+            contentType: 'application/x-www-form-urlencoded',
+            data: JSON.stringify(orderId), // Отправляем данные
+            success: function () {
+                loadCitiesWithStreets();
+
+                $.ajax({
+                    url: '/ordering',
+                    method: 'POST',
+                    contentType: 'application/x-www-form-urlencoded',
+                    data: JSON.stringify(orderId), // Отправляем данные
+                    success: function (response) {
+                        console.log(response);
+                        showNotification('Заказ отправлен на кассу', true);
+                        loadCitiesWithStreets();
+                    },
+                    error: function (response) {
+                        console.error('Error:', response);
+                        showNotification("Заказ ID "+ orderId + " не доставлен, причина: " + response.responseText, false);
+                        loadCitiesWithStreets();
+                    }
+                });
+            },
+            error: function (response) {
+                showNotification("Ошибка в изменения статуса"+ response.responseText, false);
+                loadCitiesWithStreets();
+            }
+        });
+    });
+
+    $(document).on('click', '.getOrder', function () {
+        $.ajax({
+            url: '/getOrder',
+            method: 'POST',
+            contentType: 'application/x-www-form-urlencoded',
+            data: JSON.stringify(orderId), // Отправляем данные
+            success: function (response) {
+                console.log(response);
+                loadCitiesWithStreets();
+            },
+            error: function (response) {
+                console.error('Error:', response);
+                loadCitiesWithStreets();
+            }
+        });
     });
 });
 

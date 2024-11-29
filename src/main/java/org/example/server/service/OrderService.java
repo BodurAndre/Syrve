@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.example.server.repositories.orders.*;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +25,8 @@ public class OrderService {
     private final OrderModifierRepository OrderModifierRepository;
     private final OrderPaymentRepository OrderPaymentRepository;
     private final OrderRepository OrderRepository;
+    private final OrderInfoRepository OrderInfoRepository;
+    private final OrderResponseRepository OrderResponseRepository;
 
 
     private ObjectMapper objectMapper = new ObjectMapper();
@@ -31,15 +34,19 @@ public class OrderService {
     public OrderService(OrderAdressRepositry orderAdressRepositry,
                         OrderCustomerRepository orderCustomerRepository,
                         OrderItemRepository orderItemRepository,
-                        OrderRepository orderRepository,
                         OrderModifierRepository orderModifierRepository,
-                        OrderPaymentRepository orderPaymentRepository) {
+                        OrderPaymentRepository orderPaymentRepository,
+                        OrderRepository orderRepository,
+                        OrderResponseRepository orderResponseRepository,
+                        OrderInfoRepository orderInfoRepository) {
         this.OrderAdressRepositry = orderAdressRepositry;
         this.OrderCustomerRepository = orderCustomerRepository;
         this.OrderItemRepository = orderItemRepository;
         this.OrderRepository = orderRepository;
         this.OrderModifierRepository = orderModifierRepository;
         this.OrderPaymentRepository = orderPaymentRepository;
+        this.OrderResponseRepository = orderResponseRepository;
+        this.OrderInfoRepository = orderInfoRepository;
     }
 
     @Transactional
@@ -59,16 +66,21 @@ public class OrderService {
 //            }
 //        }
 
+        LocalDateTime now = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
         Order order = new Order();
         order.setPhone(orderJson.has("phone") ? orderJson.get("phone").asText() : null);
         order.setOrderTypeId(orderJson.has("orderTypeId") ? orderJson.get("orderTypeId").asText() : null);
         order.setComment(orderJson.has("comment") ? orderJson.get("comment").asText() : null);
-        order.setCreatedAt(LocalDateTime.now());
+        order.setCreatedAt(now.format(formatter));
         order.setIpAddress(ipAddress);
-        order.setStatus(false);
+        order.setStatus("Pending");
+        order.setResponse(null);
         // Сохраняем Address (или null)
-        JsonNode addressJson = orderJson.get("deliveryPoint").get("address");
-        if (addressJson != null) {
+        JsonNode deliveryPointJson = orderJson.get("deliveryPoint");
+        if (deliveryPointJson != null && deliveryPointJson.has("address")) {
+            JsonNode addressJson = deliveryPointJson.get("address");
             Adress address = new Adress();
             address.setStreet(addressJson.has("street") ? addressJson.get("street").get("id").asText() : null);
             address.setHouse(addressJson.has("house") ? addressJson.get("house").asText() : null);
@@ -170,7 +182,7 @@ public class OrderService {
             OrderDTO orderDTO = new OrderDTO();
             orderDTO.setId(order.getId());
             orderDTO.setData(order.getCreatedAt().toString());
-            orderDTO.setStatus(order.isStatus());
+            orderDTO.setStatus(order.getStatus());
             orderDTO.setPhone(order.getPhone());
             if (!order.getPayments().isEmpty()) {
                 Payment firstPayment = order.getPayments().get(0);
@@ -185,8 +197,54 @@ public class OrderService {
     @Transactional
     public Order getOrder(String id) {
         Order order = OrderRepository.findOrdersById(id);
-        order.setStatus(true);
         OrderRepository.save(order);
         return order;
+    }
+
+    public void saveResponse(JsonNode responseJson, Order order) {
+        log.info("Начало обработки ответа для сохранения. Order ID: {}", order.getId());
+        log.info("Начало обработки ответа для сохранения. Json: {}", responseJson.toString());
+
+        try {
+            OrderInfo orderInfo = new OrderInfo();
+            JsonNode orderInfoJson = responseJson.get("orderInfo");
+            if (orderInfoJson != null) {
+                log.info("Обнаружен блок 'orderInfo' в ответе.");
+                orderInfo.setIdResponse(orderInfoJson.get("id").asText());
+                orderInfo.setPosId(orderInfoJson.get("posId").asText());
+                orderInfo.setExternalNumber(orderInfoJson.get("externalNumber").asText());
+                orderInfo.setOrganizationId(orderInfoJson.get("organizationId").asText());
+                orderInfo.setTimestamp(orderInfoJson.get("timestamp").asLong());
+                orderInfo.setCreationStatus(orderInfoJson.get("creationStatus").asText());
+                orderInfo.setErrorInfo(orderInfoJson.get("errorInfo").asText());
+                orderInfo.setOrderData(orderInfoJson.get("order").asText());
+                log.info("завершение блока 'orderInfo' в ответе.");
+            } else {
+                log.warn("Блок 'orderInfo' отсутствует в ответе. Order ID: {}", order.getId());
+            }
+
+            Response response = new Response();
+
+            response.setCorrelationId(responseJson.get("correlationId").asText());
+
+            orderInfo.setResponse(response); // Связываем Response с OrderInfo
+            response.setOrderInfo(orderInfo);
+            order.setResponse(response);
+
+            OrderRepository.save(order);
+
+
+        } catch (Exception e) {
+            log.error("Не удалось сохранить ответ для Order ID: {}. Причина: {}", order.getId(), e.getMessage(), e);
+            throw new RuntimeException("Не удалось сохранить ответ", e);
+        }
+
+        log.info("Обработка ответа завершена успешно. Order ID: {}", order.getId());
+    }
+
+
+    public void editStatusOrder(Order order, String status) {
+        order.setStatus(status);
+        OrderRepository.save(order);
     }
 }

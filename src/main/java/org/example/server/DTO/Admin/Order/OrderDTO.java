@@ -7,7 +7,7 @@ public class OrderDTO {
     private int id;
     private String data;
     private String phone;
-    private boolean status;
+    private String status;
     private boolean payment;
     private double total;
 }

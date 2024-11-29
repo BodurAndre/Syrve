@@ -48,8 +48,8 @@ $(document).ready(function () {
 function displayDishesInTable(dishes, products) {
     const table = $('.datanew').DataTable();
 
+    table.clear();
     dishes.forEach(dish => {
-        table.clear();
         const row = [
             `<label class="checkboxs">
                 <input type="checkbox">

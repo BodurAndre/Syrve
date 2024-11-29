@@ -10,12 +10,11 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "OrderOrders")
+@Table(name = "orders") // Приводим имя таблицы к общепринятому формату
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Order {
 
@@ -27,7 +26,7 @@ public class Order {
     private String ipAddress;
 
     @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    private String createdAt;
 
     @Column(name = "phone", nullable = false)
     private String phone;
@@ -35,11 +34,11 @@ public class Order {
     @Column(name = "order_type_id", nullable = false)
     private String orderTypeId;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = true) // Разрешаем null
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "address_id", nullable = true)
     private Adress address;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = true) // Разрешаем null
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_id", nullable = true)
     private Customer customer;
 
@@ -53,8 +52,12 @@ public class Order {
     private String comment;
 
     @Column(name = "status")
-    private boolean status;
+    private String status;
 
-    @Column(name = "JSON", columnDefinition = "TEXT")
+    @Column(name = "json_data", columnDefinition = "TEXT")
     private String json;
+
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "response_id", referencedColumnName = "id")
+    private Response response;
 }

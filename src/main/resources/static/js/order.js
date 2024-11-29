@@ -167,7 +167,7 @@ checkoutButton.addEventListener('click', () => {
         };
     }
 
-    else{
+    if(deliveryType == "pickup"){
         orderData = {
             id: null,
             phone: phone,

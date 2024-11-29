@@ -19,6 +19,7 @@ import org.example.server.service.ProductService;
 import org.example.server.service.RestaurantService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -27,12 +28,14 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 
 @Slf4j
 @Controller
 public class TokenController {
 
+    private final OrderController orderController;
     ObjectMapper mapper = new ObjectMapper();
 
     private int requestAttempts = 0;
@@ -45,12 +48,13 @@ public class TokenController {
     private final AdressService adressService;
     private final OrderService orderService;
 
-    public TokenController(ProductService productService, DishModifierRepository dishModifierRepository, RestaurantService restaurantService, AdressService adressService, OrderService orderService) {
+    public TokenController(ProductService productService, DishModifierRepository dishModifierRepository, RestaurantService restaurantService, AdressService adressService, OrderService orderService, OrderController orderController) {
         this.productService = productService;
         this.dishModifierRepository = dishModifierRepository;
         this.restaurantService = restaurantService;
         this.adressService = adressService;
         this.orderService = orderService;
+        this.orderController = orderController;
     }
 
     private static final String API_IIKO = "https://api-ru.iiko.services/api/";
@@ -61,6 +65,8 @@ public class TokenController {
     private static final String STREET_URL = API_IIKO + "1/streets/by_city";
     private static final String TERMINAL_URL = API_IIKO + "1/terminal_groups";
     private static final String ORDER_URL = API_IIKO + "1/deliveries/create";
+    private static final String STATUS_ORDER_URL = API_IIKO + "1/commands/status";
+    private static final String STATUS_TERMINAL_URL = API_IIKO + "1/terminal_groups/is_alive";
 
     private String token;
     private boolean apiLoginNotFound;
@@ -308,112 +314,207 @@ public class TokenController {
 
 
     @PostMapping("/ordering")
-    public ResponseEntity<?> processOrder(@RequestBody String id) {
-        log.info("Order ID: " + id);
-        Order order = orderService.getOrder(id);
+    public ResponseEntity<String> processOrder(@RequestBody String orderId) {
+        log.info("Received order ID: {}", orderId);
+
         try {
-            // Проверка API логина
-            if (apiLoginNotFound) {
-                log.warn("API login not found or incorrect.");
-                apiLoginNotFound = false;
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body("API login not found or incorrect.");
-            }
-
-            // Попытка получить idRestaurant
-            String idRestaurant = getOrFetchIdRestaurant();
-
-            if (idRestaurant == null || idRestaurant.isEmpty()) {
-                log.warn("Failed to fetch or initialize Restaurant ID.");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body("Unable to fetch restaurant ID.");
-            }
-
-            // Преобразование JSON в объект OrderRequest
-            OrderRequest newOrderRequest = createOrderRequest(order.getJson(), idRestaurant);
-
-
-            // Попытка отправить заказ
-            String response = tryToProcessOrder(newOrderRequest);
-            if (response == null) {
-                log.error("Failed to process order after retries.");
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body("Failed to process order.");
-            }
-
-            return ResponseEntity.ok(response);
+            // Асинхронный вызов для обработки заказа
+            CompletableFuture<String> orderProcessing = processOrderAsync(orderId);
+            // Возвращаем немедленный ответ или статус ожидания
+            return ResponseEntity.ok("Order processing started.");
         } catch (Exception e) {
             log.error("Error processing order: ", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Internal Server Error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal Server Error: " + e.getMessage());
         }
     }
 
-    // Метод для получения ID ресторана
-    private String getOrFetchIdRestaurant() {
+    @Async
+    public CompletableFuture<String> processOrderAsync(String orderId) {
+        try {
+            // Получение заказа
+            Order order = orderService.getOrder(orderId);
+
+            if (apiLoginNotFound) {
+                log.warn("API login not found or incorrect.");
+                apiLoginNotFound = false;
+                throw new IllegalStateException("API login not found or incorrect.");
+            }
+
+            // Получение ID ресторана
+            String restaurantId = fetchRestaurantId();
+            if (restaurantId == null) {
+                log.warn("Failed to fetch or initialize Restaurant ID.");
+                throw new IllegalArgumentException("Unable to fetch restaurant ID.");
+            }
+
+            // Создание и отправка заказа
+            OrderRequest orderRequest = createOrderRequest(order.getJson(), restaurantId);
+            JsonNode orderResponse = processOrderWithRetries(orderRequest);
+            if (orderResponse == null) {
+                log.error("Failed to process order after retries.");
+                throw new RuntimeException("Failed to process order.");
+            }
+
+            // Сохранение ответа
+            orderService.saveResponse(orderResponse, order);
+            String correlationId = orderResponse.get("correlationId").asText();
+
+            //Проверка статуса терминала
+            if(checkTerminalStatus(restaurantId)) {
+                // Проверка статуса заказа
+                String orderStatus = checkOrderStatus(correlationId, restaurantId);
+                if ("Success".equals(orderStatus)) {
+                    orderService.editStatusOrder(order, "Completed");
+                    log.info("Order successfully completed.");
+                    return CompletableFuture.completedFuture("Order successfully completed.");
+                } else if ("Error".equals(orderStatus)) {
+                    orderService.editStatusOrder(order, "ERROR");
+                    throw new IllegalStateException("Не возможно доставить заказ");
+                }
+            }
+            else {
+                orderService.editStatusOrder(order, "ERROR");
+                throw new IllegalStateException("Касса не доступна");
+            }
+
+        } catch (Exception e) {
+            log.error("Error in async order processing: ", e);
+            return CompletableFuture.failedFuture(e);
+        }
+        return CompletableFuture.completedFuture("Order successfully completed.");
+    }
+
+
+    private String fetchRestaurantId() {
         try {
             return restaurantService.getIdRestaurant();
         } catch (NoSuchElementException e) {
             log.warn("Restaurant ID not found. Fetching organization data...");
-            getOrganization(); // Обновить данные
+            getOrganization();
             return restaurantService.getIdRestaurant();
         }
     }
 
-    // Метод для создания OrderRequest
-    private OrderRequest createOrderRequest(String json, String idRestaurant) throws Exception {
-        ObjectMapper objectMapper = new ObjectMapper();
-        OrderRequest newOrderRequest = new OrderRequest();
-        newOrderRequest.organizationId = idRestaurant;
-        newOrderRequest.terminalGroupId = terminalTestGroupId;
-        newOrderRequest.createOrderSettings = new OrderRequest.CreateOrderSettings();
-        JsonNode orderNode = objectMapper.readTree(json);
-        newOrderRequest.order = orderNode;
-        return newOrderRequest;
+    private OrderRequest createOrderRequest(String json, String restaurantId) throws Exception {
+        OrderRequest orderRequest = new OrderRequest();
+        orderRequest.organizationId = restaurantId;
+        orderRequest.terminalGroupId = terminalTestGroupId;
+        orderRequest.createOrderSettings = new OrderRequest.CreateOrderSettings();
+        orderRequest.order = new ObjectMapper().readTree(json);
+        return orderRequest;
     }
 
-    // Метод для обработки заказа с повторными попытками
-    private String tryToProcessOrder(OrderRequest newOrderRequest) {
-        int maxRetries = 3; // Максимальное количество попыток
-        int attempt = 0;
-        while (attempt < maxRetries) {
+    private JsonNode processOrderWithRetries(OrderRequest orderRequest) {
+        int maxRetries = 3;
+        for (int attempt = 1; attempt <= maxRetries; attempt++) {
             try {
-                attempt++;
-                log.info("Attempt {} to process order...", attempt);
-                String updatedJson = new ObjectMapper().writeValueAsString(newOrderRequest);
-                HttpHeaders headers = new HttpHeaders();
-                headers.setContentType(MediaType.APPLICATION_JSON);
-                headers.set("Authorization", "Bearer " + token);
-
-                HttpEntity<String> requestEntity = new HttpEntity<>(updatedJson, headers);
+                log.info("Processing order, attempt {}", attempt);
+                String requestBody = new ObjectMapper().writeValueAsString(orderRequest);
+                HttpHeaders headers = createHeaders();
+                HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
 
                 ResponseEntity<String> responseEntity = restTemplate.exchange(
-                        ORDER_URL,
-                        HttpMethod.POST,
-                        requestEntity,
-                        String.class
+                        ORDER_URL, HttpMethod.POST, requestEntity, String.class
                 );
 
-                log.info("Order successfully processed on attempt {}.", attempt);
-                return responseEntity.getBody();
+                return new ObjectMapper().readTree(responseEntity.getBody());
             } catch (HttpClientErrorException e) {
-                if (e.getRawStatusCode() == 401) {
-                    log.warn("Unauthorized (401). Refreshing token...");
-                    getToken(); // Обновить токен
-                } else if (e.getRawStatusCode() == 400) {
-                    log.warn("Bad Request (400). Fetching organization data...");
-                    getOrganization(); // Обновить данные
-                } else {
-                    log.error("HTTP error: {}", e.getMessage());
-                    break; // Прерываем цикл при других ошибках
-                }
+                handleHttpClientError(e);
             } catch (Exception e) {
-                log.error("Error during order processing attempt {}: {}", attempt, e.getMessage());
-                break; // Прерываем цикл при других исключениях
+                log.error("Error during order processing: {}", e.getMessage());
+                break;
             }
         }
-        return null; // Если не удалось обработать заказ
+        return null;
     }
+
+    private boolean checkTerminalStatus(String restaurantId) {
+        try {
+            HttpHeaders headers = createHeaders();
+            String requestBody = String.format(
+                    "{\"organizationId\": \"%s\", \"terminalGroupIds\": [\"%s\"]}",
+                    restaurantId, terminalTestGroupId
+            );
+
+            ResponseEntity<String> responseEntity = restTemplate.exchange(
+                    STATUS_TERMINAL_URL, HttpMethod.POST, new HttpEntity<>(requestBody, headers), String.class
+            );
+
+            JsonNode responseBody = new ObjectMapper().readTree(responseEntity.getBody());
+            JsonNode isAliveStatusNode = responseBody.get("isAliveStatus");
+
+            for (JsonNode statusNode : isAliveStatusNode) {
+                if (statusNode.get("isAlive").asBoolean()) {
+                    return true;
+                }else {
+                    log.warn("Missing 'isAliveStatus' field in response.");
+                    return false;
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error checking Terminal status: {}", e.getMessage(), e);
+        }
+        return false;
+    }
+
+
+
+    private String checkOrderStatus(String correlationId, String restaurantId) {
+        int delayBetweenRetries = 10000;
+        for (int attempt = 1; attempt <= 15; attempt++) {
+            try {
+                log.info("Checking order status, attempt {}", attempt);
+                HttpHeaders headers = createHeaders();
+                String requestBody = String.format(
+                        "{\"organizationId\": \"%s\", \"correlationId\": \"%s\"}",
+                        restaurantId, correlationId
+                );
+
+                ResponseEntity<String> responseEntity = restTemplate.exchange(
+                        STATUS_ORDER_URL, HttpMethod.POST, new HttpEntity<>(requestBody, headers), String.class
+                );
+
+                JsonNode responseBody = new ObjectMapper().readTree(responseEntity.getBody());
+                String state = responseBody.get("state").asText();
+                if ("Success".equals(state)) {
+                    log.info("Order status successfully completed.");
+                    return "Success";
+                } else if ("InProgress".equals(state)) {
+                } else if ("Error".equals(state)){
+                    String error = responseBody.get("exception").get("message").asText();
+                    log.error("Error: "+ error);
+                    return "Error";
+                }
+                log.warn("Status: "+ state);
+                Thread.sleep(delayBetweenRetries);
+            } catch (Exception e) {
+                log.error("Error checking order status: {}", e.getMessage());
+            }
+        }
+        return "Failed";
+    }
+
+    private HttpHeaders createHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("Authorization", "Bearer " + token);
+        return headers;
+    }
+
+    private void handleHttpClientError(HttpClientErrorException e) {
+        int statusCode = e.getRawStatusCode();
+        if (statusCode == 401) {
+            log.warn("Unauthorized (401). Refreshing token...");
+            getToken();
+        } else if (statusCode == 400) {
+            log.warn("Bad Request (400). Refreshing organization data...");
+            getOrganization();
+        } else {
+            log.error("HTTP error: {}", e.getMessage());
+        }
+    }
+
+
 
     @GetMapping("/admin/saveAddress")
     public ResponseEntity<?> saveCities() {
