@@ -29,6 +29,9 @@ public class OrderModifier {
     @Column(name = "product_group_id")
     private String productGroupId;
 
+    @Column(name = "name_modifier")
+    private String nameModifier;
+
     @ManyToOne
     @JoinColumn(name = "item_id", nullable = false)
     private Item item;

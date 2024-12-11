@@ -30,7 +30,7 @@ $(document).ready(function () {
             </a>
             <ul class="dropdown-menu">
                 <li>
-                    <a href="/order/${order.id}" class="dropdown-item">
+                    <a href="/admin/order/${order.id}" class="dropdown-item">
                     <img src="/assets/img/icons/eye1.svg" class="me-2" alt="img">Sale Detail
                     </a>
                 </li>

@@ -4,14 +4,21 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
-import org.example.server.DTO.Admin.Order.OrderDTO;
+import org.example.server.DTO.Admin.Order.OrderAdminDTO;
+import org.example.server.DTO.Admin.Order.OrderAdminDishDTO;
+import org.example.server.DTO.Admin.Order.OrderAdminModifierDTO;
 import org.example.server.models.orders.*;
+import org.example.server.models.products.Dish;
+import org.example.server.models.products.Modifier;
+import org.example.server.models.products.Product;
+import org.example.server.repositories.DishRepository;
+import org.example.server.repositories.ModifierRepository;
+import org.example.server.repositories.ProductRepository;
 import org.springframework.stereotype.Service;
 import org.example.server.repositories.orders.*;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,6 +34,9 @@ public class OrderService {
     private final OrderRepository OrderRepository;
     private final OrderInfoRepository OrderInfoRepository;
     private final OrderResponseRepository OrderResponseRepository;
+    private final ModifierRepository modifierRepository;
+    private final DishRepository dishRepository;
+    private final ProductRepository productRepository;
 
 
     private ObjectMapper objectMapper = new ObjectMapper();
@@ -38,7 +48,10 @@ public class OrderService {
                         OrderPaymentRepository orderPaymentRepository,
                         OrderRepository orderRepository,
                         OrderResponseRepository orderResponseRepository,
-                        OrderInfoRepository orderInfoRepository) {
+                        OrderInfoRepository orderInfoRepository,
+                        ModifierRepository modifierRepository,
+                        DishRepository dishRepository,
+                        ProductRepository productRepository) {
         this.OrderAdressRepositry = orderAdressRepositry;
         this.OrderCustomerRepository = orderCustomerRepository;
         this.OrderItemRepository = orderItemRepository;
@@ -47,6 +60,9 @@ public class OrderService {
         this.OrderPaymentRepository = orderPaymentRepository;
         this.OrderResponseRepository = orderResponseRepository;
         this.OrderInfoRepository = orderInfoRepository;
+        this.modifierRepository = modifierRepository;
+        this.dishRepository = dishRepository;
+        this.productRepository = productRepository;
     }
 
     @Transactional
@@ -117,7 +133,18 @@ public class OrderService {
         if (itemsJson != null) {
             for (JsonNode itemJson : itemsJson) {
                 Item item = new Item();
-                item.setProductId(itemJson.has("productId") ? itemJson.get("productId").asText() : null);
+                Dish dish = null;
+                Product product = null;
+                if(itemJson.has("productId")){
+                    String productId = itemJson.get("productId").asText();
+                    item.setProductId(productId);
+                    dish = dishRepository.findDishById(productId);
+                    if (dish == null) {
+                        product = productRepository.findProductById(productId);
+                        item.setName(product.getName());
+                    }   else item.setName(dish.getName());
+                }
+
                 item.setAmount(itemJson.has("amount") ? itemJson.get("amount").asInt() : 0);
                 item.setOrder(order);  // Связываем Item с Order
 
@@ -130,18 +157,31 @@ public class OrderService {
                 if (modifiersJson != null) {
                     List<OrderModifier> modifiers = new ArrayList<>();
                     for (JsonNode modifierJson : modifiersJson) {
-                        OrderModifier modifier = new OrderModifier();
-                        modifier.setProductId(modifierJson.has("productId") ? modifierJson.get("productId").asText() : null);
-                        modifier.setAmount(modifierJson.has("amount") ? modifierJson.get("amount").asInt() : 0);
-                        modifier.setProductGroupId(modifierJson.has("productGroupId") ? modifierJson.get("productGroupId").asText() : null);
-                        modifier.setItem(item); // Связываем OrderModifier с Item
+                        OrderModifier orderModifier = new OrderModifier();
+                        Modifier modifier = null;
+
+                        if (modifierJson.has("productId")) {
+                            String productId = modifierJson.get("productId").asText();
+                            orderModifier.setProductId(productId);
+                            modifier = modifierRepository.findModifierById(productId);
+                            if(modifier == null){
+                                dish = dishRepository.findDishById(productId);
+                                orderModifier.setNameModifier(dish.getName());
+                            }
+                            else orderModifier.setNameModifier(modifier.getName());
+                        }
+
+                        orderModifier.setAmount(modifierJson.has("amount") ? modifierJson.get("amount").asInt() : 0);
+                        orderModifier.setProductGroupId(modifierJson.has("productGroupId") ? modifierJson.get("productGroupId").asText() : null);
+                        orderModifier.setItem(item); // Связываем OrderModifier с Item
 
                         // Сохраняем OrderModifier
-                        modifier = OrderModifierRepository.save(modifier);
-                        modifiers.add(modifier);
+                        OrderModifierRepository.save(orderModifier);
+                        modifiers.add(orderModifier);
                     }
                     item.setModifiers(modifiers); // Устанавливаем модификаторы в item
                 }
+
             }
             order.setItems(items); // Устанавливаем items в order
         }
@@ -175,23 +215,24 @@ public class OrderService {
     }
 
     @Transactional
-    public List<OrderDTO> getAllorder() {
+    public List<OrderAdminDTO> getAllorder() {
         List<Order> orders = OrderRepository.findAll();
-        List<OrderDTO> orderDTOList = new ArrayList<>();
+        List<OrderAdminDTO> orderAdminDTOList = new ArrayList<>();
         for (Order order : orders) {
-            OrderDTO orderDTO = new OrderDTO();
-            orderDTO.setId(order.getId());
-            orderDTO.setData(order.getCreatedAt().toString());
-            orderDTO.setStatus(order.getStatus());
-            orderDTO.setPhone(order.getPhone());
+            OrderAdminDTO orderAdminDTO = new OrderAdminDTO();
+            orderAdminDTO.setId(order.getId());
+            orderAdminDTO.setData(order.getCreatedAt().toString());
+            orderAdminDTO.setStatus(order.getStatus());
+            orderAdminDTO.setPhone(order.getPhone());
             if (!order.getPayments().isEmpty()) {
                 Payment firstPayment = order.getPayments().get(0);
-                orderDTO.setPayment(firstPayment.isProcessedExternally());
-                orderDTO.setTotal(firstPayment.getSum());
+                orderAdminDTO.setPayment(firstPayment.isProcessedExternally());
+                orderAdminDTO.setTotal(firstPayment.getSum());
             }
-            orderDTOList.add(orderDTO);
+            orderAdminDTO.setDishes(null);
+            orderAdminDTOList.add(orderAdminDTO);
         }
-        return orderDTOList;
+        return orderAdminDTOList;
     }
 
     @Transactional
@@ -199,6 +240,42 @@ public class OrderService {
         Order order = OrderRepository.findOrdersById(id);
         OrderRepository.save(order);
         return order;
+    }
+
+    @Transactional
+    public OrderAdminDTO getOrderByID(String id) {
+        Order order = OrderRepository.findOrdersById(id);
+        OrderAdminDTO orderAdminDTO = new OrderAdminDTO();
+        orderAdminDTO.setId(order.getId());
+        orderAdminDTO.setData(order.getCreatedAt().toString());
+        orderAdminDTO.setStatus(order.getStatus());
+        orderAdminDTO.setPhone(order.getPhone());
+
+        List<OrderAdminDishDTO> dishDTOList = new ArrayList<>();
+
+        if (!order.getPayments().isEmpty()) {
+            Payment firstPayment = order.getPayments().get(0);
+            orderAdminDTO.setPayment(firstPayment.isProcessedExternally());
+            orderAdminDTO.setTotal(firstPayment.getSum());
+        }
+
+        for (Item item : order.getItems()) {
+            OrderAdminDishDTO dishDTO = new OrderAdminDishDTO();
+            dishDTO.setAmount(item.getAmount());
+            dishDTO.setNameDish(item.getName());
+
+            List<OrderAdminModifierDTO> modifierDTOList = new ArrayList<>();
+            for (OrderModifier modifier : item.getModifiers()) {
+                OrderAdminModifierDTO modifierDTO = new OrderAdminModifierDTO();
+                modifierDTO.setAmount(modifier.getAmount());
+                modifierDTO.setNameModifier(modifier.getNameModifier());
+                modifierDTOList.add(modifierDTO);
+            }
+            dishDTO.setModifiers(modifierDTOList);
+            dishDTOList.add(dishDTO);
+        }
+        orderAdminDTO.setDishes(dishDTOList);
+        return orderAdminDTO;
     }
 
     public void saveResponse(JsonNode responseJson, Order order) {

@@ -1,12 +1,12 @@
 package org.example.server.controllers;
 
+import lombok.extern.slf4j.Slf4j;
 import org.example.server.DTO.Admin.CityWithStreetsDTO;
-import org.example.server.DTO.Admin.Order.OrderDTO;
+import org.example.server.DTO.Admin.Order.OrderAdminDTO;
 import org.example.server.DTO.Admin.StreetDTO;
 import org.example.server.models.RestaurantInfo;
 import org.example.server.models.adress.Cities;
 import org.example.server.models.adress.Streets;
-import org.example.server.models.orders.Order;
 import org.example.server.repositories.CitiesRepository;
 import org.example.server.repositories.StreetsRepository;
 import org.example.server.service.OrderService;
@@ -15,12 +15,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Controller
 public class AdminController {
     @Autowired
@@ -109,7 +109,7 @@ public class AdminController {
     @ResponseBody
     public ResponseEntity<?> viewOrder() {
         try {
-            List<OrderDTO> Order = orderService.getAllorder();
+            List<OrderAdminDTO> Order = orderService.getAllorder();
             return ResponseEntity.ok(Order);
         } catch (NoSuchElementException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -128,7 +128,7 @@ public class AdminController {
 
     @GetMapping(value = "/admin")
     public String test(){
-        return "test/home";
+        return "/admin/productlist";
     }
 
     @GetMapping("/admin/orders")
@@ -152,17 +152,26 @@ public class AdminController {
     }
 
 
-    @PostMapping("/editStatus")
-    public ResponseEntity<String> processOrder(@RequestBody String orderId) {
-        Order order = orderService.getOrder(orderId);
-        orderService.editStatusOrder(order, "Waiting");
-        return ResponseEntity.ok("Статус изменен");
+//    @PostMapping("/editStatus")
+//    public ResponseEntity<String> processOrder(@RequestBody String orderId) {
+//        Order order = orderService.getOrderByID(orderId);
+//        orderService.editStatusOrder(order, "Waiting");
+//        return ResponseEntity.ok("Статус изменен");
+//    }
+
+    @GetMapping(value = "/admin/order/{id}")
+    public String getOrderPage(@PathVariable("id") String id) {
+        return "admin/sales-details"; // Просто возвращаем HTML, без передачи данных
     }
 
-    @GetMapping(value = "/order/{id}")
-    public String getOrder(@PathVariable("id") String id) {
-        Order order = orderService.getOrder(id);
-        return "/admin/restaurant-info";
+    @GetMapping(value = "/api/order/{id}", produces = "application/json")
+    @ResponseBody
+    public ResponseEntity<OrderAdminDTO> getOrderData(@PathVariable("id") String id) {
+        OrderAdminDTO order = orderService.getOrderByID(id);
+        if (order == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+        return ResponseEntity.ok(order);
     }
 
 }

@@ -26,6 +26,9 @@ public class Item {
     @Column(name = "amount", nullable = false)
     private int amount;
 
+    @Column(name = "name")
+    private String name;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
