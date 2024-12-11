@@ -27,4 +27,7 @@ public interface StreetsRepository extends JpaRepository<Streets,Long> {
     @Query("SELECT s FROM Streets s WHERE s.city.cityId = :cityId")
     List<Streets> findStreetsById(@Param("cityId") String cityId);
 
+    @Query("SELECT s FROM Streets s WHERE s.streetId = :streetId")
+    Streets findStreetById(@Param("streetId") String streetId);
+
 }

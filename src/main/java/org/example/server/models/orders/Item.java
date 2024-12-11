@@ -20,14 +20,23 @@ public class Item {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @Column(name = "product_id", nullable = false)
-    private String productId;
-
     @Column(name = "amount", nullable = false)
     private int amount;
 
     @Column(name = "name")
     private String name;
+
+    @Column(name = "imageLinks")
+    private String imageLinks;
+
+    @Column(name = "price")
+    private String price;
+
+    @Column(name = "discount")
+    private String discount;
+
+    @Column(name = "subtotal")
+    private String subtotal;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "order_id", nullable = false)

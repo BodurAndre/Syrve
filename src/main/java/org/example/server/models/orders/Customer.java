@@ -22,4 +22,10 @@ public class Customer {
 
     @Column(name = "type", nullable = false)
     private String type;
+
+    @Column(name = "phone", nullable = false)
+    private String phone;
+
+    @Column(name = "email", nullable = true)
+    private String email;
 }

@@ -28,9 +28,6 @@ public class Order {
     @Column(name = "created_at", nullable = false, updatable = false)
     private String createdAt;
 
-    @Column(name = "phone", nullable = false)
-    private String phone;
-
     @Column(name = "order_type_id", nullable = false)
     private String orderTypeId;
 
@@ -50,6 +47,9 @@ public class Order {
 
     @Column(name = "comment")
     private String comment;
+
+    @Column(name = "TotalPrice")
+    private String totalPrice;
 
     @Column(name = "status")
     private String status;

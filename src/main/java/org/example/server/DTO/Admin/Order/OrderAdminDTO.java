@@ -13,4 +13,7 @@ public class OrderAdminDTO {
     private boolean payment;
     private double total;
     private List<OrderAdminDishDTO> dishes;
+    private OrderAdminAddressDTO address;
+    private OrderAdminCustomerDTO customer;
+
 }

@@ -82,17 +82,19 @@ public class OrderController {
     }
 
     @PostMapping("/saveOrder")
-    public ResponseEntity<?> saveOrder(@RequestBody JsonNode json, HttpServletRequest request) {
+    public ResponseEntity<?> saveOrder(
+            @RequestBody JsonNode order,
+            HttpServletRequest request) {
         String ipAddress = request.getRemoteAddr();
         try {
-            orderService.processOrder(json, ipAddress);
+            orderService.processOrder(order, ipAddress);
             return ResponseEntity.ok(new SuccessResponse("Order processed successfully"));
         } catch (RuntimeException ex) {
-            // Возвращаем ошибку в виде объекта JSON
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ErrorResponse(ex.getMessage()));
         }
     }
+
 
     // Класс для успешного ответа
     public class SuccessResponse {

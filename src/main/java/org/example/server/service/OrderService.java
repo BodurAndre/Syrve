@@ -2,18 +2,16 @@ package org.example.server.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.persistence.Column;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
-import org.example.server.DTO.Admin.Order.OrderAdminDTO;
-import org.example.server.DTO.Admin.Order.OrderAdminDishDTO;
-import org.example.server.DTO.Admin.Order.OrderAdminModifierDTO;
+import org.example.server.DTO.Admin.Order.*;
+import org.example.server.models.adress.Streets;
 import org.example.server.models.orders.*;
 import org.example.server.models.products.Dish;
 import org.example.server.models.products.Modifier;
 import org.example.server.models.products.Product;
-import org.example.server.repositories.DishRepository;
-import org.example.server.repositories.ModifierRepository;
-import org.example.server.repositories.ProductRepository;
+import org.example.server.repositories.*;
 import org.springframework.stereotype.Service;
 import org.example.server.repositories.orders.*;
 
@@ -32,11 +30,10 @@ public class OrderService {
     private final OrderModifierRepository OrderModifierRepository;
     private final OrderPaymentRepository OrderPaymentRepository;
     private final OrderRepository OrderRepository;
-    private final OrderInfoRepository OrderInfoRepository;
-    private final OrderResponseRepository OrderResponseRepository;
     private final ModifierRepository modifierRepository;
     private final DishRepository dishRepository;
     private final ProductRepository productRepository;
+    private final StreetsRepository streetsRepository;
 
 
     private ObjectMapper objectMapper = new ObjectMapper();
@@ -47,26 +44,24 @@ public class OrderService {
                         OrderModifierRepository orderModifierRepository,
                         OrderPaymentRepository orderPaymentRepository,
                         OrderRepository orderRepository,
-                        OrderResponseRepository orderResponseRepository,
-                        OrderInfoRepository orderInfoRepository,
                         ModifierRepository modifierRepository,
                         DishRepository dishRepository,
-                        ProductRepository productRepository) {
+                        ProductRepository productRepository,
+                        StreetsRepository streetsRepository) {
         this.OrderAdressRepositry = orderAdressRepositry;
         this.OrderCustomerRepository = orderCustomerRepository;
         this.OrderItemRepository = orderItemRepository;
         this.OrderRepository = orderRepository;
         this.OrderModifierRepository = orderModifierRepository;
         this.OrderPaymentRepository = orderPaymentRepository;
-        this.OrderResponseRepository = orderResponseRepository;
-        this.OrderInfoRepository = orderInfoRepository;
         this.modifierRepository = modifierRepository;
         this.dishRepository = dishRepository;
         this.productRepository = productRepository;
+        this.streetsRepository = streetsRepository;
     }
 
     @Transactional
-    public void processOrder(JsonNode orderJson, String ipAddress) {
+    public void processOrder(JsonNode cart, String ipAddress) {
 //        List<Order> orders = OrderRepository.findOrdersByIpAddress(ipAddress);
 //
 //        if (!orders.isEmpty()) {
@@ -82,34 +77,52 @@ public class OrderService {
 //            }
 //        }
 
+        JsonNode orderJson = cart.get("json");
+
+        String email = cart.get("email").asText();
+
         LocalDateTime now = LocalDateTime.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
         Order order = new Order();
-        order.setPhone(orderJson.has("phone") ? orderJson.get("phone").asText() : null);
         order.setOrderTypeId(orderJson.has("orderTypeId") ? orderJson.get("orderTypeId").asText() : null);
         order.setComment(orderJson.has("comment") ? orderJson.get("comment").asText() : null);
         order.setCreatedAt(now.format(formatter));
         order.setIpAddress(ipAddress);
         order.setStatus("Pending");
+        order.setTotalPrice(cart.get("totalPrice").asText());
         order.setResponse(null);
         // Сохраняем Address (или null)
         JsonNode deliveryPointJson = orderJson.get("deliveryPoint");
         if (deliveryPointJson != null && deliveryPointJson.has("address")) {
             JsonNode addressJson = deliveryPointJson.get("address");
             Adress address = new Adress();
-            address.setStreet(addressJson.has("street") ? addressJson.get("street").get("id").asText() : null);
+
+            // Получение улицы и города из репозитория
+            if (addressJson.has("street") && addressJson.get("street").has("id")) {
+                String streetId = addressJson.get("street").get("id").asText();
+                Streets streets = streetsRepository.findStreetById(streetId);
+                if (streets != null) {
+                    address.setStreetName(streets.getName());
+                    address.setCityName(streets.getCity().getCity());
+                    address.setStreetID(streetId);
+                }
+            }
+            // Заполнение остальных полей адреса
             address.setHouse(addressJson.has("house") ? addressJson.get("house").asText() : null);
             address.setType(addressJson.has("type") ? addressJson.get("type").asText() : null);
             address.setEntrance(addressJson.has("entrance") ? addressJson.get("entrance").asText() : null);
             address.setFlat(addressJson.has("flat") ? addressJson.get("flat").asText() : null);
             address.setFloor(addressJson.has("floor") ? addressJson.get("floor").asText() : null);
             address.setIntercom(addressJson.has("doorphone") ? addressJson.get("doorphone").asText() : null);
-            address = OrderAdressRepositry.save(address); // Сохраняем адрес
+
+            // Сохранение адреса
+            address = OrderAdressRepositry.save(address);
             order.setAddress(address);
         } else {
             order.setAddress(null); // Разрешаем отсутствие адреса
         }
+
 
         // Сохраняем Customer (или null)
         JsonNode customerJson = orderJson.get("customer");
@@ -117,6 +130,8 @@ public class OrderService {
             Customer customer = new Customer();
             customer.setName(customerJson.has("name") ? customerJson.get("name").asText() : null);
             customer.setType(customerJson.has("type") ? customerJson.get("type").asText() : null);
+            customer.setPhone(orderJson.has("phone") ? orderJson.get("phone").asText() : null);
+            customer.setEmail(email);
             customer = OrderCustomerRepository.save(customer); // Сохраняем клиента
             order.setCustomer(customer);
         } else {
@@ -128,24 +143,17 @@ public class OrderService {
 
         // Сохраняем Items
         List<Item> items = new ArrayList<>();
-        JsonNode itemsJson = orderJson.get("items");
+        JsonNode itemsJson = cart.get("dishes");
 
         if (itemsJson != null) {
             for (JsonNode itemJson : itemsJson) {
                 Item item = new Item();
-                Dish dish = null;
-                Product product = null;
-                if(itemJson.has("productId")){
-                    String productId = itemJson.get("productId").asText();
-                    item.setProductId(productId);
-                    dish = dishRepository.findDishById(productId);
-                    if (dish == null) {
-                        product = productRepository.findProductById(productId);
-                        item.setName(product.getName());
-                    }   else item.setName(dish.getName());
-                }
-
                 item.setAmount(itemJson.has("amount") ? itemJson.get("amount").asInt() : 0);
+                item.setName(itemJson.has("name") ? itemJson.get("name").asText() : null);
+                item.setImageLinks(itemJson.has("imageLinks") ? itemJson.get("imageLinks").asText() : null);
+                item.setPrice(itemJson.has("price") ? itemJson.get("price").asText() : null);
+                item.setDiscount(itemJson.has("discount") ? itemJson.get("discount").asText() : null);
+                item.setSubtotal(itemJson.has("subtotal") ? itemJson.get("subtotal").asText() : null);
                 item.setOrder(order);  // Связываем Item с Order
 
                 // Сохраняем Item
@@ -158,24 +166,13 @@ public class OrderService {
                     List<OrderModifier> modifiers = new ArrayList<>();
                     for (JsonNode modifierJson : modifiersJson) {
                         OrderModifier orderModifier = new OrderModifier();
-                        Modifier modifier = null;
-
-                        if (modifierJson.has("productId")) {
-                            String productId = modifierJson.get("productId").asText();
-                            orderModifier.setProductId(productId);
-                            modifier = modifierRepository.findModifierById(productId);
-                            if(modifier == null){
-                                dish = dishRepository.findDishById(productId);
-                                orderModifier.setNameModifier(dish.getName());
-                            }
-                            else orderModifier.setNameModifier(modifier.getName());
-                        }
 
                         orderModifier.setAmount(modifierJson.has("amount") ? modifierJson.get("amount").asInt() : 0);
-                        orderModifier.setProductGroupId(modifierJson.has("productGroupId") ? modifierJson.get("productGroupId").asText() : null);
+                        orderModifier.setName(modifierJson.has("name") ? modifierJson.get("name").asText() : null);
+                        orderModifier.setPrice(modifierJson.has("price") ? modifierJson.get("price").asText() : null);
+                        orderModifier.setSubtotal(modifierJson.has("subtotal") ? modifierJson.get("subtotal").asText() : null);
                         orderModifier.setItem(item); // Связываем OrderModifier с Item
 
-                        // Сохраняем OrderModifier
                         OrderModifierRepository.save(orderModifier);
                         modifiers.add(orderModifier);
                     }
@@ -223,7 +220,7 @@ public class OrderService {
             orderAdminDTO.setId(order.getId());
             orderAdminDTO.setData(order.getCreatedAt().toString());
             orderAdminDTO.setStatus(order.getStatus());
-            orderAdminDTO.setPhone(order.getPhone());
+            orderAdminDTO.setPhone(order.getCustomer().getPhone());
             if (!order.getPayments().isEmpty()) {
                 Payment firstPayment = order.getPayments().get(0);
                 orderAdminDTO.setPayment(firstPayment.isProcessedExternally());
@@ -246,11 +243,10 @@ public class OrderService {
     public OrderAdminDTO getOrderByID(String id) {
         Order order = OrderRepository.findOrdersById(id);
         OrderAdminDTO orderAdminDTO = new OrderAdminDTO();
+
         orderAdminDTO.setId(order.getId());
         orderAdminDTO.setData(order.getCreatedAt().toString());
         orderAdminDTO.setStatus(order.getStatus());
-        orderAdminDTO.setPhone(order.getPhone());
-
         List<OrderAdminDishDTO> dishDTOList = new ArrayList<>();
 
         if (!order.getPayments().isEmpty()) {
@@ -259,22 +255,52 @@ public class OrderService {
             orderAdminDTO.setTotal(firstPayment.getSum());
         }
 
+        OrderAdminAddressDTO orderAdminAddressDTO = new OrderAdminAddressDTO();
+        if (order.getAddress() != null) {
+            orderAdminAddressDTO.setHouse(order.getAddress().getHouse());
+            orderAdminAddressDTO.setFloor(order.getAddress().getFloor());
+            orderAdminAddressDTO.setIntercom(order.getAddress().getIntercom());
+            orderAdminAddressDTO.setEntrance(order.getAddress().getEntrance());
+            orderAdminAddressDTO.setFlat(order.getAddress().getFlat());
+
+            orderAdminAddressDTO.setCity(order.getAddress().getCityName());
+            orderAdminAddressDTO.setStreet(order.getAddress().getStreetName());
+
+        }
+        else orderAdminAddressDTO = null;
+
+        OrderAdminCustomerDTO orderAdminCustomerDTO = new OrderAdminCustomerDTO();
+        if (order.getCustomer() != null) {
+            orderAdminCustomerDTO.setName(order.getCustomer().getName());
+            orderAdminCustomerDTO.setPhone(order.getCustomer().getPhone());
+            orderAdminCustomerDTO.setEmail(order.getCustomer().getEmail());
+        }
+
         for (Item item : order.getItems()) {
             OrderAdminDishDTO dishDTO = new OrderAdminDishDTO();
             dishDTO.setAmount(item.getAmount());
-            dishDTO.setNameDish(item.getName());
+            dishDTO.setName(item.getName());
+            dishDTO.setPrice(item.getPrice());
+            dishDTO.setDiscount(item.getDiscount());
+            dishDTO.setSubtotal(item.getSubtotal());
+            dishDTO.setImageLinks(item.getImageLinks());
 
             List<OrderAdminModifierDTO> modifierDTOList = new ArrayList<>();
             for (OrderModifier modifier : item.getModifiers()) {
                 OrderAdminModifierDTO modifierDTO = new OrderAdminModifierDTO();
                 modifierDTO.setAmount(modifier.getAmount());
-                modifierDTO.setNameModifier(modifier.getNameModifier());
+                modifierDTO.setName(modifier.getName());
+                modifierDTO.setPrice(modifier.getPrice());
+                modifierDTO.setSubtotal(modifier.getSubtotal());
+
                 modifierDTOList.add(modifierDTO);
             }
             dishDTO.setModifiers(modifierDTOList);
             dishDTOList.add(dishDTO);
         }
         orderAdminDTO.setDishes(dishDTOList);
+        orderAdminDTO.setAddress(orderAdminAddressDTO);
+        orderAdminDTO.setCustomer(orderAdminCustomerDTO);
         return orderAdminDTO;
     }
 

@@ -18,8 +18,14 @@ public class Adress {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @Column(name = "street", nullable = false)
-    private String street;
+    @Column(name = "street_ID", nullable = false)
+    private String streetID;
+
+    @Column(name = "street_name", nullable = false)
+    private String streetName;
+
+    @Column(name = "city_name", nullable = false)
+    private String cityName;
 
     @Column(name = "house", nullable = false)
     private String house;

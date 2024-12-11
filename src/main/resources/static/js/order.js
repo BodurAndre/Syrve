@@ -4,6 +4,8 @@ console.log(storedCart);
 
 let totalPrice = 0; // Variable for total price
 
+
+
 if (storedCart.length > 0) {
     let groupHtml = ''; // String to hold the HTML of the products
 
@@ -37,6 +39,7 @@ if (storedCart.length > 0) {
 
     // Display the total price
     const totalElement = document.querySelector('.total');
+
     totalElement.innerHTML = `<h3>Итоговая сумма: ${totalPrice} MDL</h3>`;
 
     // Add event listener to remove buttons
@@ -86,6 +89,7 @@ const checkoutButton = document.getElementById('submitOrder');
 
 checkoutButton.addEventListener('click', () => {
 
+
     const formattedCart = storedCart.map(item => {
         // Базовый объект блюда
         const formattedItem = {
@@ -113,6 +117,32 @@ checkoutButton.addEventListener('click', () => {
         return formattedItem;
     });
 
+    const dishes= storedCart.map(item => {
+        // Базовый объект блюда
+        const formattedItem = {
+            imageLinks: item.dish.imageLinks,
+            price: item.dish.price, // Unique dish id
+            amount: item.dish.amount,
+            discount: 0,
+            subtotal: item.finalPrice,
+            name: item.dish.name
+        };
+
+        // Если есть модификаторы, добавляем их
+        if (item.modifiers && item.modifiers.length > 0) {
+            formattedItem.modifiers = item.modifiers.map(mod => {
+                const modifier = {
+                    name: mod.name,
+                    amount: mod.quantity,
+                    subtotal: mod.totalPrice,
+                    price: mod.price
+                };
+                return modifier;
+            });
+        }
+        return formattedItem;
+    });
+
     // Собираем данные из формы
     const deliveryType = document.querySelector('input[name="delivery"]:checked').value;
     const street = document.getElementById("streetSelect").value;
@@ -124,6 +154,7 @@ checkoutButton.addEventListener('click', () => {
     const floor = document.getElementById("floor").value;
     const doorphone = document.getElementById("intercom").value;
     const isHouse = document.getElementById("isHouse").checked;
+    const email = document.getElementById("email").value;
 
     // Получаем контактные данные
     const phone = document.getElementById("Phone").value;
@@ -135,6 +166,7 @@ checkoutButton.addEventListener('click', () => {
 
 
     console.log(deliveryType);
+
     if(deliveryType == "delivery") {
         orderData = {
             id: null,
@@ -197,27 +229,35 @@ checkoutButton.addEventListener('click', () => {
         orderData.deliveryPoint.address.doorphone = doorphone;
     }
 
+
     //localStorage.clear();
 
-    console.log(orderData)
 
-    fetch('/saveOrder', {
+    let order = {
+        email: email, // email для передачи в query
+        dishes: dishes,
+        json: orderData, // содержимое заказа
+        totalPrice: totalPrice
+    };
+
+    console.log(orderData);
+    console.log(order);
+
+    fetch(`/saveOrder`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Accept': 'application/json', // Убедитесь, что сервер возвращает JSON
+            'Accept': 'application/json',
         },
-        body: JSON.stringify(orderData)
+        body: JSON.stringify(order), // отправляем весь объект
     })
         .then(response => {
-            // Проверка на ошибки ответа сервера
             if (!response.ok) {
                 return response.json().then(data => {
-                    // Обрабатываем ошибку с сервера
                     throw new Error(data.message || 'Unknown error');
                 });
             }
-            return response.json();  // Если все ок, разбираем успешный ответ
+            return response.json();
         })
         .then(data => {
             console.log('Order processed successfully', data);
@@ -225,8 +265,9 @@ checkoutButton.addEventListener('click', () => {
         })
         .catch(error => {
             console.error('Error:', error.message);
-            showNotification(error.message, false);  // Ошибка с сервера
+            showNotification(error.message, false);
         });
+
 });
 
 

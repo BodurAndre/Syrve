@@ -20,17 +20,17 @@ public class OrderModifier {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @Column(name = "product_id", nullable = false)
-    private String productId;
-
     @Column(name = "amount", nullable = false)
     private int amount;
 
-    @Column(name = "product_group_id")
-    private String productGroupId;
+    @Column(name = "name")
+    private String name;
 
-    @Column(name = "name_modifier")
-    private String nameModifier;
+    @Column(name = "price")
+    private String price;
+
+    @Column(name = "subtotal")
+    private String subtotal;
 
     @ManyToOne
     @JoinColumn(name = "item_id", nullable = false)
