@@ -234,10 +234,11 @@ public class OrderService {
 
     @Transactional
     public Order getOrder(String id) {
-        Order order = OrderRepository.findOrdersById(id);
-        OrderRepository.save(order);
-        return order;
+        return OrderRepository.findOrdersById(id);
     }
+
+
+
 
     @Transactional
     public OrderAdminDTO getOrderByID(String id) {

@@ -7,6 +7,7 @@ import org.example.server.DTO.Admin.StreetDTO;
 import org.example.server.models.RestaurantInfo;
 import org.example.server.models.adress.Cities;
 import org.example.server.models.adress.Streets;
+import org.example.server.models.orders.Order;
 import org.example.server.repositories.CitiesRepository;
 import org.example.server.repositories.StreetsRepository;
 import org.example.server.service.OrderService;
@@ -152,12 +153,12 @@ public class AdminController {
     }
 
 
-//    @PostMapping("/editStatus")
-//    public ResponseEntity<String> processOrder(@RequestBody String orderId) {
-//        Order order = orderService.getOrderByID(orderId);
-//        orderService.editStatusOrder(order, "Waiting");
-//        return ResponseEntity.ok("Статус изменен");
-//    }
+    @PostMapping("/editStatus")
+    public ResponseEntity<String> processOrder(@RequestBody String orderId) {
+        Order order = orderService.getOrder(orderId);
+        orderService.editStatusOrder(order, "Waiting");
+        return ResponseEntity.ok("Статус изменен");
+    }
 
     @GetMapping(value = "/admin/order/{id}")
     public String getOrderPage(@PathVariable("id") String id) {
