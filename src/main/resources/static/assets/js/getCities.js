@@ -8,7 +8,7 @@ $(document).ready(function () {
     function loadCitiesWithStreets() {
         table.clear();
         $.ajax({
-            url: '/api/locations/all',
+            url: '/admin/api/locations/all',
             method: 'GET',
             success: function (data) {
                 data.forEach(city => {

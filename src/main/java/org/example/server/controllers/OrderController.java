@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Controller
+@RequestMapping("/restaurant")
 public class OrderController {
 
     private final CitiesRepository citiesRepository;
@@ -41,17 +42,6 @@ public class OrderController {
         this.citiesRepository = citiesRepository;
         this.streetsRepository = streetsRepository;
         this.orderService = orderService;
-    }
-
-
-    @GetMapping("/order")
-    public String showOrder() {
-        return "Web/order";
-    }
-
-    @RequestMapping(value = "/viewProducts", method = RequestMethod.GET)
-    public String getMenu(){
-        return "test/test";
     }
 
     @GetMapping("/cities")

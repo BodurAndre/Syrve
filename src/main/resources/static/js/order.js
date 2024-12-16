@@ -4,6 +4,9 @@ console.log(storedCart);
 
 let totalPrice = 0; // Variable for total price
 
+let phoneTrue = true;
+let emailTrue = true
+let nameTrue = true;
 
 
 if (storedCart.length > 0) {
@@ -72,7 +75,6 @@ window.onload = function() {
 }
 
 function toggleFields() {
-    const isHouseCheckbox = document.getElementById('isHouse');
     const apartmentFields = document.getElementById('apartment-fields');
     const houseFields = document.getElementById('house-fields');
 
@@ -88,6 +90,48 @@ function toggleFields() {
 const checkoutButton = document.getElementById('submitOrder');
 
 checkoutButton.addEventListener('click', () => {
+    const deliveryType = document.querySelector('input[name="delivery"]:checked').value;
+    const street = document.getElementById("streetSelect").value;
+    const house = document.getElementById("house").value;
+    const customerName = document.getElementById("name").value;
+    const entrance = document.getElementById("entrance").value;
+    const apartment = document.getElementById("apartment").value;
+    const floor = document.getElementById("floor").value;
+    const doorphone = document.getElementById("intercom").value;
+    const email = document.getElementById("email").value;
+
+    // Получаем контактные данные
+    const inputPhone = document.getElementById("Phone").value;
+    const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value || "не выбран";
+
+    const phone = "+373" + inputPhone;
+
+
+    if (deliveryType === "delivery") {
+        if (!street) {
+            showNotification("No select street", false);
+            return;
+        }
+        if (!house) {
+            showNotification("No select house", false);
+            return;
+        }
+    }
+
+    if(!phoneTrue){
+        showNotification("Phone no correctly", false);
+        return;
+    }
+    if(!emailTrue){
+        showNotification("Email no correctly", false);
+        return;
+    }
+    if(!nameTrue){
+        showNotification("Invalid name or name not entered", false);
+        return;
+    }
+
+    let orderData = {};
 
 
     const formattedCart = storedCart.map(item => {
@@ -112,12 +156,10 @@ checkoutButton.addEventListener('click', () => {
                 return modifier;
             });
         }
-
-
         return formattedItem;
     });
 
-    const dishes= storedCart.map(item => {
+    const dishes = storedCart.map(item => {
         // Базовый объект блюда
         const formattedItem = {
             imageLinks: item.dish.imageLinks,
@@ -143,31 +185,8 @@ checkoutButton.addEventListener('click', () => {
         return formattedItem;
     });
 
-    // Собираем данные из формы
-    const deliveryType = document.querySelector('input[name="delivery"]:checked').value;
-    const street = document.getElementById("streetSelect").value;
-    const house = document.getElementById("house").value;
-    const customerName= document.getElementById("name").value;
-
-    const entrance = document.getElementById("entrance").value;
-    const apartment = document.getElementById("apartment").value;
-    const floor = document.getElementById("floor").value;
-    const doorphone = document.getElementById("intercom").value;
-    const isHouse = document.getElementById("isHouse").checked;
-    const email = document.getElementById("email").value;
-
-    // Получаем контактные данные
-    const phone = document.getElementById("Phone").value;
-
-    // Получаем способ оплаты
-    const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value || "не выбран";
-
-    let orderData = {}
-
-
-    console.log(deliveryType);
-
-    if(deliveryType == "delivery") {
+    // Формируем данные заказа
+    if (deliveryType === "delivery") {
         orderData = {
             id: null,
             phone: phone,
@@ -199,7 +218,7 @@ checkoutButton.addEventListener('click', () => {
         };
     }
 
-    if(deliveryType == "pickup"){
+    if (deliveryType === "pickup") {
         orderData = {
             id: null,
             phone: phone,
@@ -222,16 +241,12 @@ checkoutButton.addEventListener('click', () => {
         };
     }
 
-    if (!isHouse && orderData.deliveryPoint && orderData.deliveryPoint.address) {
+    if (orderData.deliveryPoint && orderData.deliveryPoint.address) {
         orderData.deliveryPoint.address.entrance = entrance;
         orderData.deliveryPoint.address.flat = apartment;
         orderData.deliveryPoint.address.floor = floor;
         orderData.deliveryPoint.address.doorphone = doorphone;
     }
-
-
-    //localStorage.clear();
-
 
     let order = {
         email: email, // email для передачи в query
@@ -240,10 +255,9 @@ checkoutButton.addEventListener('click', () => {
         totalPrice: totalPrice
     };
 
-    console.log(orderData);
     console.log(order);
 
-    fetch(`/saveOrder`, {
+    fetch(`/restaurant/saveOrder`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -269,6 +283,7 @@ checkoutButton.addEventListener('click', () => {
         });
 
 });
+
 
 
 function showNotification(message, isSuccess = false) {
@@ -325,10 +340,7 @@ function toggleFields() {
     document.getElementById('streetSelect').required = isDelivery;
     document.getElementById('house').required = isDelivery;
 
-    const isHouseCheckbox = document.getElementById('isHouse').checked;
-    document.getElementById('apartment-fields').style.display = isHouseCheckbox ? 'none' : 'block';
-
-    if (!isHouseCheckbox && isDelivery) {
+    if (isDelivery) {
         document.getElementById('entrance').required = true;
         document.getElementById('floor').required = true;
         document.getElementById('apartment').required = true;
@@ -341,14 +353,77 @@ function toggleFields() {
     }
 }
 
-function validatePhone(phone) {
-    const phoneRegex = /^\+373\d{8}$/;
-    return phoneRegex.test(phone);
+function validatePhone() {
+    const phoneInput = document.getElementById('Phone');
+    const phoneSection = phoneInput.closest('.input-wrapper'); // Находим родительский div
+
+    const phoneValue = phoneInput.value.trim();
+
+    // Регулярное выражение для номера телефона (8 цифр)
+    const phoneRegex = /^\d{8}$/;
+
+    if (!phoneRegex.test(phoneValue)) {
+        phoneTrue = false;
+        phoneSection.style.borderColor = 'red';
+    } else {
+        phoneTrue = true; // Светло-зеленый фон для успеха
+        phoneSection.style.borderColor = '#ccc'; // Стандартная граница
+    }
 }
 
-function validateEmail(email) {
+function validateName() {
+    const nameInput = document.getElementById('name');
+    const nameSection = nameInput.closest('.input-wrapper'); // Находим родительский div
+
+    const nameValue = nameInput.value.trim();
+
+    // Регулярное выражение: минимум 3 буквы, только алфавит
+    const nameRegex = /^[a-zA-Zа-яА-Я]{3,}$/;
+
+    if (!nameRegex.test(nameValue)) {
+        nameTrue = false;
+        nameSection.style.borderColor = 'red'; // Красный цвет границы
+    } else {
+        nameTrue = true;
+        nameSection.style.borderColor = '#ccc'; // Стандартная граница
+    }
+}
+
+// Добавление события проверки при потере фокуса
+document.getElementById('Phone').addEventListener('blur', validatePhone);
+document.getElementById('email').addEventListener('blur', validateEmail);
+document.getElementById('name').addEventListener('blur', validateName);
+
+document.addEventListener('DOMContentLoaded', function () {
+    const phoneInput = document.getElementById('Phone');
+
+    phoneInput.addEventListener('input', function () {
+        // Ограничение только на цифры (убираем нечисловые символы)
+        phoneInput.value = phoneInput.value.replace(/\D/g, '');
+
+        // Обрезаем лишние цифры (максимум 8 символов)
+        if (phoneInput.value.length > 8) {
+            phoneInput.value = phoneInput.value.slice(0, 8);
+        }
+    });
+});
+
+function validateEmail() {
+    const emailInput = document.getElementById('email');
+    const emailSection = emailInput.closest('.input-wrapper'); // Находим родительский div
+
+    const emailValue = emailInput.value.trim();
+
+    // Регулярное выражение для email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+
+    if (!emailRegex.test(emailValue)) {
+        emailTrue = false; // Светло-красный фон для ошибки
+        emailSection.style.borderColor = 'red'; // Красный цвет границы
+    } else {
+        emailTrue = true; // Светло-зеленый фон для успеха
+        emailSection.style.borderColor = '#ccc'; // Стандартная граница
+    }
 }
 
 function showError(elementId) {
@@ -367,12 +442,12 @@ document.getElementById('submitOrder').addEventListener('click', function () {
         { id: 'citySelect' },
         { id: 'streetSelect' },
         { id: 'house' },
-        { id: 'name' },
+        { id: 'name', validator: validateName },
         { id: 'email', validator: validateEmail },
         { id: 'Phone', validator: validatePhone }
     ];
 
-    if (isDelivery && !document.getElementById('isHouse').checked) {
+    if (isDelivery) {
         fieldsToCheck.push(
             { id: 'entrance' },
             { id: 'floor' },
@@ -400,4 +475,3 @@ document.getElementById('submitOrder').addEventListener('click', function () {
 window.onload = function() {
     toggleFields();
 };
-

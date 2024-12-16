@@ -9,8 +9,8 @@ document.addEventListener("DOMContentLoaded", function () {
     console.log(cart)
 
     Promise.all([
-        fetch('/menu/dishes').then(response => response.json()),
-        fetch('/menu/products').then(response => response.json())
+        fetch('/restaurant/menu/dishes').then(response => response.json()),
+        fetch('/restaurant/menu/products').then(response => response.json())
     ])
         .then(([dishes, products]) => {
             displayDishes(dishes);
@@ -414,7 +414,7 @@ function displayProducts(dishes) {
 
 
 cartButton.addEventListener('click', () => {
-    window.location.href = "/order";
+    window.location.href = "/en/order";
 });
 
 // Display cart content

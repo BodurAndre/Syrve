@@ -25,13 +25,13 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())  // Отключение CSRF защиты
                 .authorizeHttpRequests(authz -> authz
-                        .requestMatchers("/login","/assets/**","/**", "/register", "/js/**", "/jsTest/**", "/css/**", "/fonts.flaticon/**", "/images/**", "/scss/**", "/jsProduct").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/login","/assets/**","/en/**","/restaurant/**", "/register", "/js/**", "/jsTest/**", "/css/**", "/fonts.flaticon/**", "/images/**", "/scss/**", "/jsProduct/**", "/assets/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
                         .loginPage("/login")
-                        .defaultSuccessUrl("/")
+                        .defaultSuccessUrl("/en/")
                 );
 
         return http.build();

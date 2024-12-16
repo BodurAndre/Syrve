@@ -11,7 +11,7 @@ $(document).ready(function () {
         const addressInfo = document.getElementById("addressInfo");
         const dishesTable = document.getElementById("dishesTable");
 
-        fetch(`/api/order/${orderId}`)
+        fetch(`/admin/api/order/${orderId}`)
             .then(response => {
                 if (!response.ok) {
                     throw new Error("Order not found");
@@ -128,7 +128,7 @@ $(document).ready(function () {
     $(document).on('click', '.setOrder', function () {
         // Изменяем статус заказа
         $.ajax({
-            url: '/editStatus',
+            url: '/admin/editStatus',
             method: 'POST',
             contentType: 'application/json',
             data: orderId,
@@ -156,6 +156,9 @@ $(document).ready(function () {
                             `Заказ ID ${orderId} не обработан, причина: ${response.responseText}`,
                             false
                         );
+                        setTimeout(() => {
+                            location.reload();
+                        }, 2000);
                     }
                 });
             },

@@ -10052,91 +10052,161 @@ textarea.form-control {
 
 /*Доставка*/
 
-    .containerDelivery {
-        width: 100%;
-        max-width: 600px;
-        margin: 10px auto;
-        padding: 20px;
-        background-color: #f9f9f9;
-        border-radius: 8px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    }
+.containerDelivery {
+    width: 100%;
+    max-width: 600px;
+    margin: 10px auto;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    font-family: Arial, sans-serif;
+}
 
-    .section {
-        margin-bottom: 20px;
-    }
+.section {
+    margin-bottom: 20px;
+}
 
-    h3 {
-        font-size: 18px;
-        margin-bottom: 10px;
-        color: #333;
-    }
+h3 {
+    font-size: 18px;
+    margin-bottom: 10px;
+    color: #333;
+}
 
-    .input-group {
-        display: flex;
-        flex-direction: column;
-        margin-bottom: 15px;
-    }
+.input-group,
+.apartment-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 15px;
+}
 
-    .input-group label {
-        font-size: 14px;
-        margin-bottom: 5px;
-        color: #555;
-    }
+.input-group label {
+    font-size: 14px;
+    margin-bottom: 5px;
+    color: #555;
+}
 
-    .input-group input,
-    .input-group select {
-        padding: 10px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        font-size: 14px;
-    }
+.input-group input,
+.input-group select {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    flex: 1;
+}
 
-    .input-group input::placeholder {
-        color: #aaa;
-    }
+.apartment-group input {
+    flex: 1 1 calc(33% - 10px);
+    min-width: 100px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
 
-    .checkbox-group {
-        display: flex;
-        align-items: center;
-    }
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    margin-top: 10px;
+}
 
-    .checkbox-group input {
-        margin-right: 10px;
-    }
+.checkbox-group input {
+    margin-right: 5px;
+}
 
-    .apartment-group {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-    }
+.phone-input {
+    display: flex;
+    align-items: center;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    overflow: hidden;
+}
 
-    .apartment-group input {
-        flex: 1;
-        min-width: 150px;
-    }
+.phone-code {
+    padding: 10px;
+    background-color: #f0f0f0;
+    color: #333;
+    font-size: 14px;
+    border-right: 1px solid #ccc;
+}
 
-    /* Стили для кнопки заказа */
-    .order-button {
-        display: flex;
-        justify-content: center;
-        margin-top: 20px;
-    }
+.section {
+    margin-bottom: 20px;
+}
 
-    #submitOrder {
-        background-color: #ff4500;
-        color: white;
-        padding: 15px 30px;
-        border: none;
-        border-radius: 8px;
-        font-size: 16px;
-        cursor: pointer;
-        transition: background-color 0.3s ease;
-    }
+.required-field::after {
+    content: " *";
+    color: red;
+}
 
-    #submitOrder:hover {
-        background-color: #ff6700;
-    }
+.contact-details label {
+    font-size: 14px;
+    margin-bottom: 5px;
+    color: #555;
+}
+
+.input-wrapper {
+    display: flex;
+    align-items: center;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 5px;
+}
+
+.phone-input {
+    display: flex;
+    align-items: center;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.phone-code {
+    padding: 10px;
+    background-color: #f0f0f0;
+    color: #333;
+    font-size: 14px;
+    border-right: 1px solid #ccc;
+}
+
+.input-wrapper input {
+    flex: 1;
+    padding: 10px;
+    font-size: 14px;
+    border: none;
+    outline: none;
+}
+
+.input-wrapper input::placeholder {
+    color: #aaa;
+}
+
+/* Кастомизация для input[type="tel"] */
+#Phone {
+    font-size: 14px;
+}
+
+.order-button {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+#submitOrder {
+    background-color: #ff4500;
+    color: white;
+    padding: 15px 30px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+#submitOrder:hover {
+    background-color: #ff6700;
+}
+
 
 .required-field::after {
     content: " *";

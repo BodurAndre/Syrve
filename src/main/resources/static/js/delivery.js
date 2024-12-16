@@ -1,7 +1,7 @@
 const Cities = [];
 
 document.addEventListener("DOMContentLoaded", function () {
-    fetch('/cities')
+    fetch('/restaurant/cities')
         .then(response => response.json())
         .then(cities => {
             Cities.push(...cities);  // Записываем города в массив Cities
@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 function displayCities(cities) {
     const citySelect = document.getElementById("citySelect");
-    citySelect.innerHTML = '<option value="">--Выберите город--</option>';
+    citySelect.innerHTML = '<option value="" class="required-field">--Select city--</option>';
 
     cities.forEach(city => {
         const option = document.createElement("option");
@@ -26,14 +26,14 @@ document.getElementById("citySelect").addEventListener("change", function () {
     const cityId = this.value;
     const streetSelect = document.getElementById("streetSelect");
 
-    streetSelect.innerHTML = '<option value="">--Выберите улицу--</option>';
+    streetSelect.innerHTML = '<option value="" class="required-field">--Select street--</option>';
 
     if (!cityId) {
         streetSelect.disabled = true;
         return;
     }
 
-    fetch(`/streets?cityId=${cityId}`)
+    fetch(`/restaurant/streets?cityId=${cityId}`)
         .then(response => response.json())
         .then(data => {
             streetSelect.disabled = false;

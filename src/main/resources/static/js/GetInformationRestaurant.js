@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     // Получение строки с API
-    fetch('/getNameRestaurant')
+    fetch('/restaurant/getNameRestaurant')
         .then(response => {
             if (!response.ok) {
                 throw new Error('Сетевая ошибка: ' + response.status);

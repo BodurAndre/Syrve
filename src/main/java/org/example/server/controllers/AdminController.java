@@ -42,7 +42,7 @@ public class AdminController {
     }
 
 
-    @GetMapping("/getNameRestaurant")
+    @GetMapping("/restaurant/getNameRestaurant")
     @ResponseBody
     public String getNameRestaurant() {
         String nameRestaurant = restaurantService.getNameRestaurant();
@@ -68,7 +68,7 @@ public class AdminController {
     }
 
     @RestController
-    @RequestMapping("/api/locations")
+    @RequestMapping("/admin/api/locations")
     public class LocationController {
         @Autowired
         private CitiesRepository citiesRepository;
@@ -127,7 +127,7 @@ public class AdminController {
         return "/admin/restaurant-info";
     }
 
-    @GetMapping(value = "/admin")
+    @GetMapping(value = "/admin/")
     public String test(){
         return "/admin/productlist";
     }
@@ -153,7 +153,7 @@ public class AdminController {
     }
 
 
-    @PostMapping("/editStatus")
+    @PostMapping("/admin/editStatus")
     public ResponseEntity<String> processOrder(@RequestBody String orderId) {
         Order order = orderService.getOrder(orderId);
         orderService.editStatusOrder(order, "Waiting");
@@ -165,7 +165,7 @@ public class AdminController {
         return "admin/sales-details"; // Просто возвращаем HTML, без передачи данных
     }
 
-    @GetMapping(value = "/api/order/{id}", produces = "application/json")
+    @GetMapping(value = "/admin/api/order/{id}", produces = "application/json")
     @ResponseBody
     public ResponseEntity<OrderAdminDTO> getOrderData(@PathVariable("id") String id) {
         OrderAdminDTO order = orderService.getOrderByID(id);

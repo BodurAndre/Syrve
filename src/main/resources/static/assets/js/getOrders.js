@@ -94,7 +94,7 @@ $(document).ready(function () {
         const orderId = $(this).data('id');
 
         $.ajax({
-            url: '/editStatus',
+            url: '/admin/editStatus',
             method: 'POST',
             contentType: 'application/x-www-form-urlencoded',
             data: JSON.stringify(orderId), // Отправляем данные

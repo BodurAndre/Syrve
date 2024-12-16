@@ -75,7 +75,7 @@ public class TokenController {
     ObjectMapper objectMapper = new ObjectMapper();
     HttpHeaders headers = new HttpHeaders();
 
-    @GetMapping("/getToken")
+    @GetMapping("/admin/getToken")
     public ResponseEntity<String> getToken() {
         String apiLogin;
         try {
@@ -89,6 +89,8 @@ public class TokenController {
         String requestBody = "{\"apiLogin\": \"" + apiLogin + "\"}";
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<String> request = new HttpEntity<>(requestBody, headers);
+
+        log.warn("Получение токена");
         try {
             ResponseEntity<String> response = restTemplate.exchange(
                     TOKEN_URL,
@@ -101,14 +103,18 @@ public class TokenController {
             token = jsonNode.get("token").asText();
             return ResponseEntity.ok("Токен успешно получен");
 
-        } catch (HttpClientErrorException e) {
+        }
+
+        catch (HttpClientErrorException e) {
             apiLoginNotFound = true;
+            log.error("Ошибка при получении токена: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Ошибка при получении токена: " + e.getMessage());
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Ошибка обработки JSON", e);
         }
     }
+
 
     @GetMapping("/getOrganization")
     public ResponseEntity<String> getOrganization() {
@@ -320,13 +326,19 @@ public class TokenController {
         try {
             // Асинхронный вызов для обработки заказа
             CompletableFuture<String> orderProcessing = processOrderAsync(orderId);
-            // Возвращаем немедленный ответ или статус ожидания
-            return ResponseEntity.ok("Order processing started.");
+
+            // Ожидание результата асинхронной операции
+            String result = orderProcessing.join();  // или orderProcessing.get(), если нужно обработать исключение
+
+            // Возвращаем результат выполнения
+            return ResponseEntity.ok(result);
         } catch (Exception e) {
             log.error("Error processing order: ", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal Server Error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(e.getMessage());
         }
     }
+
 
     @Async
     public CompletableFuture<String> processOrderAsync(String orderId) {
@@ -349,9 +361,11 @@ public class TokenController {
 
             // Создание и отправка заказа
             OrderRequest orderRequest = createOrderRequest(order.getJson(), restaurantId);
+            log.info("Отправка заказ: " + order.getJson());
             JsonNode orderResponse = processOrderWithRetries(orderRequest);
             if (orderResponse == null) {
                 log.error("Failed to process order after retries.");
+                orderService.editStatusOrder(order, "ERROR");
                 throw new RuntimeException("Failed to process order.");
             }
 
@@ -405,7 +419,7 @@ public class TokenController {
     }
 
     private JsonNode processOrderWithRetries(OrderRequest orderRequest) {
-        int maxRetries = 3;
+        int maxRetries = 5;
         for (int attempt = 1; attempt <= maxRetries; attempt++) {
             try {
                 log.info("Processing order, attempt {}", attempt);
