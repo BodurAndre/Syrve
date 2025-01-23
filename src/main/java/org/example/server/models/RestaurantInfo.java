@@ -33,4 +33,7 @@ public class RestaurantInfo {
 
     @Column(name = "address")
     private String addressRestaurant;
+
+    @Column(name = "sector")
+    private String Sector;
 }
