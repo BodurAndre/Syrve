@@ -22,6 +22,9 @@
 
     <link rel="stylesheet" href="/css/flaticon.css">
     <link rel="stylesheet" href="/css/order.css">
+
+    <meta name="_csrf" content="${_csrf.token}">
+    <meta name="_csrf_header" content="${_csrf.headerName}">
 </head>
 <body>
 
@@ -29,7 +32,7 @@
     <div class="container">
         <div class="row justify-content-between">
             <div class="col-12 col-md d-flex align-items-center">
-                <p class="mb-0 phone"><span class="mailus">Phone no:</span> <a href="#">+00 1234 567</a> or <span class="mailus">email us:</span> <a href="#">emailsample@email.com</a></p>
+                <p class="mb-0 phone"><span class="mailus">Phone no:</span> <a href="#" class="phoneRestaurant"></a> or <span class="mailus">email us:</span> <a href="#" class="emailRestaurant"></a></p>
             </div>
             <div class="col-12 col-md d-flex justify-content-md-end">
                 <p class="mb-0">Mon - Fri / 9:00-21:00, Sat - Sun / 10:00-20:00</p>
@@ -81,9 +84,20 @@
     </div>
 </section>
 
-
 <section class="ftco-section">
-    <div class="container">
+    <div class="container" id="successContainer" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="checkmark">&#10003;</span>
+                <h2>Мы получили ваш заказ</h2>
+            </div>
+            <div class="modal-body">
+                <p>Скоро с вами свяжется оператор.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" id="orderContainer">
         <div class="row justify-content-center mb-5 pb-2">
             <div class="col-md-7 text-center heading-section ftco-animate">
                 <span class="subheading">Specialties</span>
@@ -106,7 +120,7 @@
             </div>
         </div>
 
-        <div class="containerDelivery">
+        <div id="containerDelivery" class="containerDelivery" style="display: none;">
             <!-- Способ доставки -->
             <div class="section delivery-options">
                 <h3>Delivery Method</h3>
@@ -167,7 +181,7 @@
                     <input type="email" id="email" name="email" placeholder="Enter email" required>
                 </div>
             </div>
-
+            <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
             <!-- Кнопка подтверждения -->
             <div class="order-button">
                 <button type="button" id="submitOrder">Send</button>

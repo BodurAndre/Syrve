@@ -1,5 +1,6 @@
 // Читаем данные из localStorage
 const storedCart = JSON.parse(localStorage.getItem('cart')) || [];
+const containerDelivery = document.getElementById('containerDelivery');
 console.log(storedCart);
 
 let totalPrice = 0; // Variable for total price
@@ -8,6 +9,7 @@ let phoneTrue = true;
 let emailTrue = true
 let nameTrue = true;
 
+if(storedCart.length != 0) containerDelivery.style.display = 'block'
 
 if (storedCart.length > 0) {
     let groupHtml = ''; // String to hold the HTML of the products
@@ -100,6 +102,9 @@ checkoutButton.addEventListener('click', () => {
     const doorphone = document.getElementById("intercom").value;
     const email = document.getElementById("email").value;
 
+
+    const orderContainer = document.getElementById('orderContainer');
+    const successContainer = document.getElementById('successContainer');
     // Получаем контактные данные
     const inputPhone = document.getElementById("Phone").value;
     const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value || "не выбран";
@@ -257,11 +262,14 @@ checkoutButton.addEventListener('click', () => {
 
     console.log(order);
 
+    const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+
     fetch(`/restaurant/saveOrder`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
+            'X-CSRF-TOKEN': csrfToken
         },
         body: JSON.stringify(order), // отправляем весь объект
     })
@@ -274,8 +282,9 @@ checkoutButton.addEventListener('click', () => {
             return response.json();
         })
         .then(data => {
-            console.log('Order processed successfully', data);
-            showNotification('Order processed successfully', true);
+            localStorage.removeItem('cart');
+            orderContainer.style.display = 'none'; // Скрыть форму заказа
+            successContainer.style.display = 'block';
         })
         .catch(error => {
             console.error('Error:', error.message);
@@ -283,7 +292,6 @@ checkoutButton.addEventListener('click', () => {
         });
 
 });
-
 
 
 function showNotification(message, isSuccess = false) {

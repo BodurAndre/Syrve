@@ -2,7 +2,9 @@ package org.example.server.controllers;
 
 
 
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -37,10 +39,9 @@ public class HomeController {
     public String contact(){return "/Web/contact";}
 
     @GetMapping("/en/order")
-    public String showOrder() {
+    public String showOrder(CsrfToken token, Model model) {
+        model.addAttribute("_csrf", token);
         return "Web/order";
     }
-
-
 
 }

@@ -24,4 +24,13 @@ public class RestaurantInfo {
 
     @Column(name = "id_Restaurant")
     private String idRestaurant;
+
+    @Column(name = "phone")
+    private String phoneRestaurant;
+
+    @Column(name = "email")
+    private String emailRestaurant;
+
+    @Column(name = "address")
+    private String addressRestaurant;
 }

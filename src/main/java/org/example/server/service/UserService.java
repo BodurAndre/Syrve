@@ -1,5 +1,6 @@
 package org.example.server.service;
 
+import jakarta.transaction.Transactional;
 import org.example.server.models.User;
 import org.example.server.repositories.UserRepository;
 import org.springframework.security.core.Authentication;
@@ -30,5 +31,21 @@ public class UserService {
         User newUser = userRepository.save(user);
         userRepository.flush();
         return newUser;
+    }
+
+    public void updateUserProfilePhoto(User user, String fileUrl) {
+        user.setProfilePhotoUrl(fileUrl);
+        userRepository.save(user);
+    }
+
+    @Transactional
+    public User getAuthenticatedUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        return userRepository.findUserByEmail(username);
+    }
+
+    public void saveUser(User user) {
+        userRepository.save(user);
     }
 }

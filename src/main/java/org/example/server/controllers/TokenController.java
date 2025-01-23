@@ -40,7 +40,7 @@ public class TokenController {
 
     private int requestAttempts = 0;
 
-    String terminalTestGroupId = "753a78c4-8802-49c3-8d3b-64dd7b001a10";
+    String terminalTestGroupId = "b2407cfc-6519-44f1-892b-e9674ce14cbe";
 
     private final ProductService productService;
     private final DishModifierRepository dishModifierRepository;
@@ -102,27 +102,25 @@ public class TokenController {
             JsonNode jsonNode = objectMapper.readTree(response.getBody());
             token = jsonNode.get("token").asText();
             return ResponseEntity.ok("Токен успешно получен");
-
-        }
-
-        catch (HttpClientErrorException e) {
-            apiLoginNotFound = true;
-            log.error("Ошибка при получении токена: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Ошибка при получении токена: " + e.getMessage());
+        } catch (HttpClientErrorException e) {
+            if (e.getRawStatusCode() == 401) {
+                apiLoginNotFound = true;
+                log.error("Ошибка: Неверный API login.");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("Ошибка: Неверный API login.");
+            } else {
+                apiLoginNotFound = true;
+                log.error("Ошибка при получении токена: " + e.getMessage());
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("Ошибка при получении токена: " + e.getMessage());
+            }
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Ошибка обработки JSON", e);
         }
     }
 
-
     @GetMapping("/getOrganization")
     public ResponseEntity<String> getOrganization() {
-        if (apiLoginNotFound) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Ошибка: API login не введен.");
-        }
-
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("Authorization", "Bearer " + token);
 
@@ -143,18 +141,25 @@ public class TokenController {
             String apiLogin = restaurantService.getApiLogin();
             restaurantService.saveOrUpdateRestaurant(idRestaurant, nameRestaurant, apiLogin);
             return ResponseEntity.ok("Информация об организации успешно получена и сохранена.");
-
         } catch (HttpClientErrorException e) {
             if (e.getRawStatusCode() == 401) {
-                getToken();
-                return getOrganization();
-            } else return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                log.warn("Ошибка 401: Токен устарел или API login некорректен.");
+                ResponseEntity<String> tokenResponse = getToken();
+                if (tokenResponse.getStatusCode().is2xxSuccessful()) {
+                    return getOrganization(); // Повторный вызов только если токен обновлен
+                } else {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body("Не верный API Login");
+                }
+            } else {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body("Ошибка при получении организации: " + e.getMessage());
-
+            }
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Ошибка обработки JSON", e);
         }
     }
+
 
     @GetMapping("/admin/saveProducts")
     public String saveProducts(Model model) {

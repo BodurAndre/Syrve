@@ -47,7 +47,10 @@ public class User {
     @Column(name = "ROLE")
     private String role;
 
-    public User(String email, String password, String firstName, String lastName, String dateOfBirth, String country, String gender) {
+    @Column(name = "PHONE")
+    private String Phone;
+
+    public User(String email, String password, String firstName, String lastName, String dateOfBirth, String country, String gender, String phone) {
         this.email = email;
         this.password = password;
         this.firstName = firstName;
@@ -55,5 +58,6 @@ public class User {
         this.dateOfBirth = dateOfBirth;
         this.country = country;
         this.gender = gender;
+        this.Phone = phone;
     }
 }

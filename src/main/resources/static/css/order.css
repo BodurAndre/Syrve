@@ -10215,3 +10215,92 @@ h3 {
 .error {
     border-color: red;
 }
+
+/******************************************************/
+
+/* Общий стиль для модального окна */
+.modal-overlay {
+    display: flex; /* Модальное окно отображается по умолчанию */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5); /* Затемнение фона */
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    margin:0 auto;
+    background: #fff;
+    border-radius: 10px;
+    max-width: 400px;
+    width: 90%; /* Для мобильных устройств */
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    animation: slideDown 0.3s ease-out;
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 15px;
+}
+
+.checkmark {
+    font-size: 50px;
+    color: #28a745; /* Зеленый цвет */
+    margin-right: 10px;
+}
+
+.modal-body p {
+    font-size: 16px;
+    color: #333;
+    margin: 10px 0;
+}
+
+.close-modal-link {
+    display: inline-block;
+    margin-top: 10px;
+    font-size: 14px;
+    color: #28a745;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.close-modal-link:hover {
+    text-decoration: underline;
+}
+
+/* Анимация появления */
+@keyframes slideDown {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Адаптация для мобильных */
+@media (max-width: 768px) {
+    .modal-content {
+        width: 95%;
+        padding: 15px;
+    }
+
+    .modal-header h2 {
+        font-size: 18px;
+    }
+
+    .modal-body p {
+        font-size: 14px;
+    }
+}
+

@@ -10,6 +10,9 @@ $(document).ready(function () {
                     $('#nameRestaurant').val(data.nameRestaurant);
                     $('#idRestaurant').val(data.idRestaurant);
                     $('#apiLogin').val(data.apiLogin);
+                    $('#phoneRestaurant').val(data.phoneRestaurant);
+                    $('#emailRestaurant').val(data.emailRestaurant);
+                    $('#addressRestaurant').val(data.addressRestaurant);
                     $('.restaurant-name').val(data.nameRestaurant);
                 }
             },
@@ -25,9 +28,12 @@ $(document).ready(function () {
     // Сохранение нового API Login
     $('#saveApiLogin').on('click', function () {
         const newApiLogin = $('#apiLogin').val(); // Получаем новое значение
+        const emailRestaurant = $('#emailRestaurant').val();
+        const phoneRestaurant = $('#phoneRestaurant').val();
+        const addressRestaurant = $('#addressRestaurant').val();
 
         if (!newApiLogin) {
-            alert("Поле API Login не может быть пустым.");
+            showNotification('Поле API Login не может быть пустым', false);
             return;
         }
 
@@ -35,11 +41,33 @@ $(document).ready(function () {
             url: '/admin/updateApiLogin',
             method: 'POST',
             contentType: 'application/x-www-form-urlencoded',
-            data: { apiLogin: newApiLogin }, // Отправляем данные
-            success: function (response) {
-                showNotification('API Login успешно обновлен!', true);
-                // Обновляем поле без перезагрузки страницы
-                loadRestaurantInfo();
+            data: { apiLogin: newApiLogin,
+                    emailRestaurant: emailRestaurant,
+                    phoneRestaurant: phoneRestaurant,
+                    addressRestaurant: addressRestaurant}, // Отправляем данные
+            success: function () {
+                $.ajax({
+                    url: '/admin/resetToken',
+                    method: 'POST',
+                    success: function () {
+                        $.ajax({
+                            url: '/getOrganization',
+                            method: 'GET',
+                            success: function () {
+                                showNotification('API Login успешно обновлен!', true);
+                                loadRestaurantInfo();
+                            },
+                            error: function (response) {
+                                loadRestaurantInfo();
+                                showNotification(response.responseText, false);
+                            }
+                        });
+                    },
+                    error: function (response) {
+                        loadRestaurantInfo();
+                        showNotification(response.responseText, false);
+                    }
+                });
             },
             error: function (response) {
                 showNotification(response.responseText, false);
@@ -52,6 +80,22 @@ $(document).ready(function () {
         $.ajax({
             url: '/admin/resetToken',
             method: 'POST',
+            success: function () {
+                showNotification('Токен успешно сброшен!', true);
+                // Обновляем информацию о ресторане без перезагрузки страницы
+                loadRestaurantInfo();
+            },
+            error: function (response) {
+                console.log(response);
+                showNotification(response.responseText, false);
+            }
+        });
+    });
+
+    $('#getAddress').on('click', function () {
+        $.ajax({
+            url: '/getOrganization',
+            method: 'GET',
             success: function () {
                 showNotification('Токен успешно сброшен!', true);
                 // Обновляем информацию о ресторане без перезагрузки страницы

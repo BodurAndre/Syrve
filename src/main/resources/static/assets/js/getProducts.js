@@ -4,8 +4,8 @@ statusResponse = true;
 $(document).ready(function () {
     function loadProducts() {
         Promise.all([
-            fetch('/admin/menu/dishes').then(response => response.json()),
-            fetch('/admin/menu/products').then(response => response.json())
+            fetch('/restaurant/menu/dishes').then(response => response.json()),
+            fetch('/restaurant/menu/products').then(response => response.json())
         ])
             .then(([dishes, products]) => {
                 displayDishesInTable(dishes, products);

@@ -34,26 +34,34 @@ public class RestaurantService {
         return restaurantRepository.findAll().stream().findFirst().orElseThrow(); // Если ничего не найдено, кидаем исключение
     }
 
-    public RestaurantInfo savApiLogin(String apiLogin) {
-        // Создаем новый объект RestaurantInfo с введённым apiLogin
-        RestaurantInfo newRestaurant = new RestaurantInfo();
-        newRestaurant.setApiLogin(apiLogin);
-
-        // Сохраняем новый объект в базе данных
-        return restaurantRepository.save(newRestaurant);
-    }
-
-    public void updateApiLogin(String newApiLogin) {
+    public void updateApiLogin(String newApiLogin, String emailRestaurant, String phoneRestaurant, String addressRestaurant) {
         try {
             // Пытаемся получить существующую запись о ресторане
             RestaurantInfo restaurantInfo = getInfoRestaurant();
+            if(restaurantInfo.getApiLogin().equals(newApiLogin)) {
+                restaurantInfo.setEmailRestaurant(emailRestaurant);
+                restaurantInfo.setPhoneRestaurant(phoneRestaurant);
+                restaurantInfo.setAddressRestaurant(addressRestaurant);
+                restaurantRepository.save(restaurantInfo);
+            }
+            else{
+                restaurantInfo.setApiLogin(newApiLogin);
+                restaurantInfo.setEmailRestaurant(emailRestaurant);
+                restaurantInfo.setPhoneRestaurant(phoneRestaurant);
+                restaurantInfo.setAddressRestaurant(addressRestaurant);
+                restaurantInfo.setNameRestaurant(null);
+                restaurantInfo.setIdRestaurant(null);
+                restaurantRepository.save(restaurantInfo);
+            }
 
-            // Если запись найдена, обновляем её apiLogin
-            restaurantInfo.setApiLogin(newApiLogin);
-            restaurantRepository.save(restaurantInfo);
         } catch (NoSuchElementException e) {
             // Если записи нет, создаем новую с переданным apiLogin
-            savApiLogin(newApiLogin);
+            RestaurantInfo newRestaurant = new RestaurantInfo();
+            newRestaurant.setApiLogin(newApiLogin);
+            newRestaurant.setEmailRestaurant(emailRestaurant);
+            newRestaurant.setPhoneRestaurant(phoneRestaurant);
+            newRestaurant.setAddressRestaurant(addressRestaurant);
+            restaurantRepository.save(newRestaurant);
         }
     }
 
@@ -75,7 +83,6 @@ public class RestaurantService {
         return restaurantInfo.getIdRestaurant();
     }
     public String getNameRestaurant() {
-        // Пытаемся получить первую запись ресторана из базы данных
         RestaurantInfo restaurantInfo = restaurantRepository.findAll().stream()
                 .findFirst()
                 .orElseThrow(() -> new NoSuchElementException("Id Restaurant not found"));
