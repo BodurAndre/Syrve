@@ -34,7 +34,7 @@ public class RestaurantService {
         return restaurantRepository.findAll().stream().findFirst().orElseThrow(); // Если ничего не найдено, кидаем исключение
     }
 
-    public void updateApiLogin(String newApiLogin, String emailRestaurant, String phoneRestaurant, String addressRestaurant) {
+    public void updateApiLogin(String newApiLogin, String emailRestaurant, String phoneRestaurant, String addressRestaurant, String sectorRestaurant) {
         try {
             // Пытаемся получить существующую запись о ресторане
             RestaurantInfo restaurantInfo = getInfoRestaurant();
@@ -42,6 +42,7 @@ public class RestaurantService {
                 restaurantInfo.setEmailRestaurant(emailRestaurant);
                 restaurantInfo.setPhoneRestaurant(phoneRestaurant);
                 restaurantInfo.setAddressRestaurant(addressRestaurant);
+                restaurantInfo.setSector(sectorRestaurant);
                 restaurantRepository.save(restaurantInfo);
             }
             else{
@@ -49,6 +50,7 @@ public class RestaurantService {
                 restaurantInfo.setEmailRestaurant(emailRestaurant);
                 restaurantInfo.setPhoneRestaurant(phoneRestaurant);
                 restaurantInfo.setAddressRestaurant(addressRestaurant);
+                restaurantInfo.setSector(sectorRestaurant);
                 restaurantInfo.setNameRestaurant(null);
                 restaurantInfo.setIdRestaurant(null);
                 restaurantRepository.save(restaurantInfo);
@@ -61,6 +63,7 @@ public class RestaurantService {
             newRestaurant.setEmailRestaurant(emailRestaurant);
             newRestaurant.setPhoneRestaurant(phoneRestaurant);
             newRestaurant.setAddressRestaurant(addressRestaurant);
+            newRestaurant.setSector(sectorRestaurant);
             restaurantRepository.save(newRestaurant);
         }
     }
@@ -74,6 +77,9 @@ public class RestaurantService {
         // Возвращаем значение apiLogin
         return restaurantInfo.getApiLogin();
     }
+
+
+
     public String getIdRestaurant() {
         // Пытаемся получить первую запись ресторана из базы данных
         RestaurantInfo restaurantInfo = restaurantRepository.findAll().stream()

@@ -13,6 +13,7 @@ $(document).ready(function () {
                     $('#phoneRestaurant').val(data.phoneRestaurant);
                     $('#emailRestaurant').val(data.emailRestaurant);
                     $('#addressRestaurant').val(data.addressRestaurant);
+                    $('#sectorRestaurant').val(data.sectorRestaurant);
                     $('.restaurant-name').val(data.nameRestaurant);
                 }
             },
@@ -31,6 +32,7 @@ $(document).ready(function () {
         const emailRestaurant = $('#emailRestaurant').val();
         const phoneRestaurant = $('#phoneRestaurant').val();
         const addressRestaurant = $('#addressRestaurant').val();
+        const sectorRestaurant = $('#sectorRestaurant').val();
 
         if (!newApiLogin) {
             showNotification('Поле API Login не может быть пустым', false);
@@ -44,18 +46,29 @@ $(document).ready(function () {
             data: { apiLogin: newApiLogin,
                     emailRestaurant: emailRestaurant,
                     phoneRestaurant: phoneRestaurant,
-                    addressRestaurant: addressRestaurant}, // Отправляем данные
+                    addressRestaurant: addressRestaurant,
+                    sectorRestaurant: sectorRestaurant}, // Отправляем данные
             success: function () {
                 $.ajax({
                     url: '/admin/resetToken',
                     method: 'POST',
                     success: function () {
                         $.ajax({
-                            url: '/getOrganization',
+                            url: '/admin/getToken',
                             method: 'GET',
                             success: function () {
-                                showNotification('API Login успешно обновлен!', true);
-                                loadRestaurantInfo();
+                                $.ajax({
+                                    url: '/getOrganization',
+                                    method: 'GET',
+                                    success: function () {
+                                        showNotification('API Login успешно обновлен!', true);
+                                        loadRestaurantInfo();
+                                    },
+                                    error: function (response) {
+                                        loadRestaurantInfo();
+                                        showNotification(response.responseText, false);
+                                    }
+                                });
                             },
                             error: function (response) {
                                 loadRestaurantInfo();
@@ -70,6 +83,7 @@ $(document).ready(function () {
                 });
             },
             error: function (response) {
+                loadRestaurantInfo();
                 showNotification(response.responseText, false);
             }
         });

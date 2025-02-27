@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.example.server.models.OrderRequest;
+import org.example.server.models.RestaurantInfo;
 import org.example.server.models.orders.Order;
 import org.example.server.models.products.Dish;
 import org.example.server.models.products.DishModifier;
@@ -40,7 +41,7 @@ public class TokenController {
 
     private int requestAttempts = 0;
 
-    String terminalTestGroupId = "b2407cfc-6519-44f1-892b-e9674ce14cbe";
+    String terminalTestGroupId = "09f24a8d-a290-493d-9b36-41683dca09a5";
 
     private final ProductService productService;
     private final DishModifierRepository dishModifierRepository;
@@ -58,15 +59,19 @@ public class TokenController {
     }
 
     private static final String API_IIKO = "https://api-ru.iiko.services/api/";
-    private static final String TOKEN_URL = API_IIKO + "1/access_token";
-    private static final String ORGANIZATIONS_URL = API_IIKO + "1/organizations";
-    private static final String NOMENCLATURE_URL = API_IIKO + "1/nomenclature";
-    private static final String CITIES_URL = API_IIKO + "1/cities";
-    private static final String STREET_URL = API_IIKO + "1/streets/by_city";
-    private static final String TERMINAL_URL = API_IIKO + "1/terminal_groups";
-    private static final String ORDER_URL = API_IIKO + "1/deliveries/create";
-    private static final String STATUS_ORDER_URL = API_IIKO + "1/commands/status";
-    private static final String STATUS_TERMINAL_URL = API_IIKO + "1/terminal_groups/is_alive";
+    private static final String API_SYRVE = "https://api-eu.syrve.live/api/";
+
+    private static String API_SELECT = API_SYRVE;
+
+    private static final String TOKEN_URL = "1/access_token";
+    private static final String ORGANIZATIONS_URL = "1/organizations";
+    private static final String NOMENCLATURE_URL = "1/nomenclature";
+    private static final String CITIES_URL = "1/cities";
+    private static final String STREET_URL = "1/streets/by_city";
+    private static final String TERMINAL_URL = "1/terminal_groups";
+    private static final String ORDER_URL = "1/deliveries/create";
+    private static final String STATUS_ORDER_URL = "1/commands/status";
+    private static final String STATUS_TERMINAL_URL = "1/terminal_groups/is_alive";
 
     private String token;
     private boolean apiLoginNotFound;
@@ -79,7 +84,14 @@ public class TokenController {
     public ResponseEntity<String> getToken() {
         String apiLogin;
         try {
-            apiLogin = restaurantService.getApiLogin();
+            RestaurantInfo restaurantInfo = restaurantService.getInfoRestaurant();
+            apiLogin = restaurantInfo.getApiLogin();
+            log.warn("Sector: " + restaurantInfo.getSector());
+            if(restaurantInfo.getSector().equals("IIKO")) {
+                API_SELECT = API_IIKO;
+                log.warn("Sector выбран IIKO: " + API_SELECT);
+            }
+            else API_SELECT = API_SYRVE;
         } catch (NoSuchElementException e) {
             apiLoginNotFound = true;
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -90,10 +102,11 @@ public class TokenController {
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<String> request = new HttpEntity<>(requestBody, headers);
 
-        log.warn("Получение токена");
+        log.warn("Получение токена " + API_SELECT+TOKEN_URL);
+
         try {
             ResponseEntity<String> response = restTemplate.exchange(
-                    TOKEN_URL,
+                    API_SELECT+TOKEN_URL,
                     HttpMethod.POST,
                     request,
                     String.class
@@ -129,7 +142,7 @@ public class TokenController {
 
         try {
             ResponseEntity<String> responseEntity = restTemplate.exchange(
-                    ORGANIZATIONS_URL,
+                    API_SELECT+ORGANIZATIONS_URL,
                     HttpMethod.POST,
                     requestEntity,
                     String.class
@@ -191,7 +204,7 @@ public class TokenController {
 
         try {
             ResponseEntity<String> responseEntity = restTemplate.exchange(
-                    NOMENCLATURE_URL,
+                    API_SELECT+NOMENCLATURE_URL,
                     HttpMethod.POST,
                     requestEntity,
                     String.class
@@ -291,7 +304,7 @@ public class TokenController {
 
         try {
             ResponseEntity<String> responseEntity = restTemplate.exchange(
-                    TERMINAL_URL,
+                    API_SELECT+TERMINAL_URL,
                     HttpMethod.POST,
                     requestEntity,
                     String.class
@@ -433,7 +446,7 @@ public class TokenController {
                 HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
 
                 ResponseEntity<String> responseEntity = restTemplate.exchange(
-                        ORDER_URL, HttpMethod.POST, requestEntity, String.class
+                        API_SELECT+ORDER_URL, HttpMethod.POST, requestEntity, String.class
                 );
 
                 return new ObjectMapper().readTree(responseEntity.getBody());
@@ -456,7 +469,7 @@ public class TokenController {
             );
 
             ResponseEntity<String> responseEntity = restTemplate.exchange(
-                    STATUS_TERMINAL_URL, HttpMethod.POST, new HttpEntity<>(requestBody, headers), String.class
+                    API_SELECT+STATUS_TERMINAL_URL, HttpMethod.POST, new HttpEntity<>(requestBody, headers), String.class
             );
 
             JsonNode responseBody = new ObjectMapper().readTree(responseEntity.getBody());
@@ -490,7 +503,7 @@ public class TokenController {
                 );
 
                 ResponseEntity<String> responseEntity = restTemplate.exchange(
-                        STATUS_ORDER_URL, HttpMethod.POST, new HttpEntity<>(requestBody, headers), String.class
+                        API_SELECT+STATUS_ORDER_URL, HttpMethod.POST, new HttpEntity<>(requestBody, headers), String.class
                 );
 
                 JsonNode responseBody = new ObjectMapper().readTree(responseEntity.getBody());
@@ -569,7 +582,7 @@ public class TokenController {
 
         try {
             ResponseEntity<String> responseEntity = restTemplate.exchange(
-                    CITIES_URL,
+                    API_SELECT+CITIES_URL,
                     HttpMethod.POST,
                     requestEntity,
                     String.class
@@ -585,7 +598,7 @@ public class TokenController {
                 requestBody = "{\"organizationId\": \"" + idRestaurant + "\",\"cityId\":\"" + cityID + "\"}";
                 requestEntity = new HttpEntity<>(requestBody, headers);
                 responseEntity = restTemplate.exchange(
-                        STREET_URL,
+                        API_SELECT+STREET_URL,
                         HttpMethod.POST,
                         requestEntity,
                         String.class

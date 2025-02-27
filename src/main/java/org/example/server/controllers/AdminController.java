@@ -50,14 +50,15 @@ public class AdminController {
             @RequestParam("apiLogin") String newApiLogin,
             @RequestParam("emailRestaurant") String emailRestaurant,
             @RequestParam("phoneRestaurant") String phoneRestaurant,
-            @RequestParam("addressRestaurant") String addressRestaurant) {
+            @RequestParam("addressRestaurant") String addressRestaurant,
+            @RequestParam("sectorRestaurant") String sectorRestaurant) {
 
         if (newApiLogin == null || newApiLogin.trim().isEmpty()) {
             return ResponseEntity.badRequest().body("API Login не может быть пустым.");
         }
 
         // Обновление данных через сервис
-        restaurantService.updateApiLogin(newApiLogin, emailRestaurant, phoneRestaurant, addressRestaurant);
+        restaurantService.updateApiLogin(newApiLogin, emailRestaurant, phoneRestaurant, addressRestaurant, sectorRestaurant);
         return ResponseEntity.ok("Данные успешно обновлены.");
     }
 
@@ -93,6 +94,7 @@ public class AdminController {
             response.put("emailRestaurant", restaurantInfo.getEmailRestaurant());
             response.put("phoneRestaurant", restaurantInfo.getPhoneRestaurant());
             response.put("addressRestaurant", restaurantInfo.getAddressRestaurant());
+            response.put("sectorRestaurant", restaurantInfo.getSector());
             return ResponseEntity.ok(response);
         } catch (NoSuchElementException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
