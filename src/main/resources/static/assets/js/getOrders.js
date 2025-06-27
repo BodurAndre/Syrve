@@ -2,7 +2,6 @@ isModel = false;
 statusResponse = true;
 
 $(document).ready(function () {
-
     const table = $('.datanew').DataTable();
 
     function loadCitiesWithStreets() {
@@ -62,6 +61,39 @@ $(document).ready(function () {
     // Загрузка данных при загрузке страницы
     loadCitiesWithStreets();
 
+    function loadRestaurantInfo() {
+        $.ajax({
+            url: '/admin/viewRestaurant',
+            method: 'GET',
+            success: function (data) {
+                console.log(data);
+                const select = $('#orderOptions');
+                select.empty(); // очищаем старые опции
+
+                // Добавляем дефолтный option
+                select.append('<option value="" disabled selected>Select restaurant</option>');
+
+                if (Array.isArray(data)) {
+                    data.forEach(terminal => {
+                        const option = $('<option>', {
+                            value: terminal.terminalId, // или terminal.terminalId, если тебе нужен именно он
+                            text: terminal.nameRestaurant + ' - ' + terminal.address
+                        });
+                        select.append(option);
+                    });
+                } else {
+                    showNotification('Данные о терминалах не найдены.', false);
+                }
+            },
+            error: function () {
+                showNotification('Ошибка при загрузке информации о ресторане.', false);
+            }
+        });
+
+    }
+
+    loadRestaurantInfo();
+
     if(isModel) {
         if(statusResponse) showNotification('Города и улицы успешно обновлены', true);
         else showNotification('Произошла ошибка при обновлении данных', false);
@@ -90,7 +122,76 @@ $(document).ready(function () {
         });
     });
 
+    let selectedOrderId = null;
+
     $(document).on('click', '.setOrder', function () {
+        selectedOrderId = $(this).data('id');
+        $('#orderModal').addClass('show').fadeIn();
+    });
+
+    $('#cancelCheckout').on('click', function () {
+        $('#orderModal').removeClass('show').fadeOut();
+    });
+
+
+    $('#confirmCheckout').on('click', function () {
+        const restaurantId = $('#orderOptions').val();
+
+        if (!restaurantId) {
+            alert('Пожалуйста, выберите ресторан!');
+            return;
+        }
+
+        if (!selectedOrderId) {
+            alert('Ошибка: не найден ID заказа.');
+            return;
+        }
+        console.log("restaurantId - " + restaurantId);
+        console.log("selectedOrderId - " + selectedOrderId);
+        //Сначала обновим статус
+        $.ajax({
+            url: '/admin/editStatus',
+            method: 'POST',
+            contentType: 'application/json',
+            data: `${selectedOrderId}`,
+            success: function () {
+                loadCitiesWithStreets();
+                $('#orderModal').removeClass('show').fadeOut();
+                // Потом отправим заказ с ID ресторана
+                $.ajax({
+                    url: '/ordering',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        orderId: String(selectedOrderId),
+                        restaurantId: String(restaurantId)
+                    }), // передаём restaurantId
+                    success: function (response) {
+                        console.log(response);
+                        showNotification('Заказ отправлен в ресторан', true);
+                        $('#orderModal').removeClass('show').fadeOut();
+                        loadCitiesWithStreets();
+                    },
+                    error: function (response) {
+                        console.error('Ошибка:', response);
+                        showNotification("Заказ ID " + selectedOrderId + " не отправлен: " + response.responseText, false);
+                        $('#orderModal').removeClass('show').fadeOut();
+                        loadCitiesWithStreets();
+                    }
+                });
+            },
+            error: function (response) {
+                showNotification("Ошибка при изменении статуса: " + response.responseText, false);
+                $('#orderModal').removeClass('show').fadeOut();
+                loadCitiesWithStreets();
+            }
+        });
+    });
+
+
+
+
+    $(document).on('click', '.checkOutOrder', function () {
         const orderId = $(this).data('id');
 
         $.ajax({

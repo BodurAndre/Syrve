@@ -6,6 +6,7 @@ import org.example.server.DTO.Admin.Order.OrderAdminDTO;
 import org.example.server.DTO.Admin.StreetDTO;
 import org.example.server.DTO.Admin.UserDTO;
 import org.example.server.models.RestaurantInfo;
+import org.example.server.models.TerminalGroup;
 import org.example.server.models.User;
 import org.example.server.models.adress.Cities;
 import org.example.server.models.adress.Streets;
@@ -48,19 +49,19 @@ public class AdminController {
     @PostMapping("/admin/updateApiLogin")
     public ResponseEntity<String> updateApiLogin(
             @RequestParam("apiLogin") String newApiLogin,
-            @RequestParam("emailRestaurant") String emailRestaurant,
-            @RequestParam("phoneRestaurant") String phoneRestaurant,
-            @RequestParam("addressRestaurant") String addressRestaurant,
-            @RequestParam("sectorRestaurant") String sectorRestaurant) {
+            @RequestParam(value = "emailRestaurant", required = false) String emailRestaurant,
+            @RequestParam(value = "phoneRestaurant", required = false) String phoneRestaurant,
+            @RequestParam(value = "addressRestaurant", required = false) String addressRestaurant,
+            @RequestParam(value = "sectorRestaurant", required = false) String sectorRestaurant) {
 
         if (newApiLogin == null || newApiLogin.trim().isEmpty()) {
             return ResponseEntity.badRequest().body("API Login не может быть пустым.");
         }
 
-        // Обновление данных через сервис
         restaurantService.updateApiLogin(newApiLogin, emailRestaurant, phoneRestaurant, addressRestaurant, sectorRestaurant);
         return ResponseEntity.ok("Данные успешно обновлены.");
     }
+
 
 
 
@@ -81,9 +82,9 @@ public class AdminController {
         }
     }
 
-    @RequestMapping(value = "/admin/viewRestaurant", method = RequestMethod.GET)
+    @RequestMapping(value = "/admin/viewCompany", method = RequestMethod.GET)
     @ResponseBody
-    public ResponseEntity<?> viewRestaurant() {
+    public ResponseEntity<?> viewCompany() {
         try {
             RestaurantInfo restaurantInfo = restaurantService.getInfoRestaurant();
 
@@ -98,6 +99,17 @@ public class AdminController {
             return ResponseEntity.ok(response);
         } catch (NoSuchElementException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @RequestMapping(value = "/admin/viewRestaurant", method = RequestMethod.GET)
+    @ResponseBody
+    public ResponseEntity<?> viewRestaurant() {
+        try {
+            List<TerminalGroup> terminalGroups = restaurantService.getInfoTerminalGroup();
+            return ResponseEntity.ok(terminalGroups);
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.badRequest().body("Нет доступных терминалов.");
         }
     }
 

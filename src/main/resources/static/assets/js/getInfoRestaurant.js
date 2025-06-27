@@ -1,20 +1,20 @@
 $(document).ready(function () {
     // Функция для загрузки текущей информации о ресторане
-    function loadRestaurantInfo() {
+    function loadCompanyInfo() {
         $.ajax({
-            url: '/admin/viewRestaurant',
+            url: '/admin/viewCompany',
             method: 'GET',
             success: function (data) {
                 if (data) {
                     // Обновляем интерфейс с новыми данными
-                    $('#nameRestaurant').val(data.nameRestaurant);
-                    $('#idRestaurant').val(data.idRestaurant);
-                    $('#apiLogin').val(data.apiLogin);
-                    $('#phoneRestaurant').val(data.phoneRestaurant);
-                    $('#emailRestaurant').val(data.emailRestaurant);
-                    $('#addressRestaurant').val(data.addressRestaurant);
-                    $('#sectorRestaurant').val(data.sectorRestaurant);
-                    $('.restaurant-name').val(data.nameRestaurant);
+                    console.log(data)
+                    $('#nameCompany').val(data.nameRestaurant || '');
+                    $('#idCompany').val(data.idRestaurant || '');
+                    $('#apiLogin').val(data.apiLogin || '');
+                    $('#phoneCompany').val(data.phoneRestaurant || '');
+                    $('#emailCompany').val(data.emailRestaurant || '');
+                    $('#sectorRestaurant').val(data.sectorRestaurant || '').trigger('change');
+                    $('.restaurant-name').val(data.nameRestaurant || '');
                 }
             },
             error: function () {
@@ -23,14 +23,68 @@ $(document).ready(function () {
         });
     }
 
+    function loadRestaurantInfo() {
+        $.ajax({
+            url: '/admin/viewRestaurant',
+            method: 'GET',
+            success: function (data) {
+                const container = $('#terminalCardsContainer'); // обёртка, куда вставлять карточки
+                container.empty(); // очищаем перед вставкой новых
+
+                if (Array.isArray(data)) {
+                    data.forEach(terminal => {
+                        const card = `
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-lg-5 col-sm-6 col-12">
+                                        <div class="form-group">
+                                            <label>Name Restaurant</label>
+                                            <input type="text" value="${terminal.nameRestaurant}" disabled>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-5 col-sm-6 col-12">
+                                        <div class="form-group">
+                                            <label>Restaurant ID</label>
+                                            <input type="text" value="${terminal.terminalId}" disabled>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-5 col-sm-6 col-12">
+                                        <div class="form-group">
+                                            <label>Address</label>
+                                            <input type="text" value="${terminal.address}">
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-5 col-sm-6 col-12">
+                                        <div class="form-group">
+                                            <label>Time zone</label>
+                                            <input type="text" value="${terminal.timeZone}">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                        container.append(card); // добавляем в DOM
+                    });
+                } else {
+                    showNotification('Данные о терминалах не найдены.', false);
+                }
+            },
+            error: function () {
+                showNotification('Ошибка при загрузке информации о ресторане.', false);
+            }
+        });
+    }
+    loadCompanyInfo();
     // Загрузка информации о ресторане при загрузке страницы
     loadRestaurantInfo();
 
     // Сохранение нового API Login
     $('#saveApiLogin').on('click', function () {
         const newApiLogin = $('#apiLogin').val(); // Получаем новое значение
-        const emailRestaurant = $('#emailRestaurant').val();
-        const phoneRestaurant = $('#phoneRestaurant').val();
+        const emailCompany = $('#emailCompany').val();
+        const phoneCompany = $('#phoneCompany').val();
         const addressRestaurant = $('#addressRestaurant').val();
         const sectorRestaurant = $('#sectorRestaurant').val();
 
@@ -44,8 +98,8 @@ $(document).ready(function () {
             method: 'POST',
             contentType: 'application/x-www-form-urlencoded',
             data: { apiLogin: newApiLogin,
-                    emailRestaurant: emailRestaurant,
-                    phoneRestaurant: phoneRestaurant,
+                    emailRestaurant: emailCompany,
+                    phoneRestaurant: phoneCompany,
                     addressRestaurant: addressRestaurant,
                     sectorRestaurant: sectorRestaurant}, // Отправляем данные
             success: function () {
@@ -61,29 +115,41 @@ $(document).ready(function () {
                                     url: '/getOrganization',
                                     method: 'GET',
                                     success: function () {
-                                        showNotification('API Login успешно обновлен!', true);
-                                        loadRestaurantInfo();
+                                        $.ajax({
+                                            url: '/admin/getTerminalGroup',
+                                            method: 'GET',
+                                            success: function (response) {
+                                                showNotification('API Login успешно обновлен!', true);
+                                                loadCompanyInfo();
+                                                loadRestaurantInfo();
+                                            },
+                                            error: function (xhr) {
+                                                const errorMsg = xhr.responseText || 'Произошла неизвестная ошибка.';
+                                                showNotification(errorMsg, false);
+                                                console.error("Ошибка при запросе терминальных групп:", errorMsg);
+                                            }
+                                        });
                                     },
                                     error: function (response) {
-                                        loadRestaurantInfo();
+                                        loadCompanyInfo();
                                         showNotification(response.responseText, false);
                                     }
                                 });
                             },
                             error: function (response) {
-                                loadRestaurantInfo();
+                                loadCompanyInfo();
                                 showNotification(response.responseText, false);
                             }
                         });
                     },
                     error: function (response) {
-                        loadRestaurantInfo();
+                        loadCompanyInfo();
                         showNotification(response.responseText, false);
                     }
                 });
             },
             error: function (response) {
-                loadRestaurantInfo();
+                loadCompanyInfo();
                 showNotification(response.responseText, false);
             }
         });
@@ -97,7 +163,7 @@ $(document).ready(function () {
             success: function () {
                 showNotification('Токен успешно сброшен!', true);
                 // Обновляем информацию о ресторане без перезагрузки страницы
-                loadRestaurantInfo();
+                loadCompanyInfo();
             },
             error: function (response) {
                 console.log(response);
@@ -106,21 +172,22 @@ $(document).ready(function () {
         });
     });
 
-    $('#getAddress').on('click', function () {
+    $('#getAllInformation').on('click', function () {
         $.ajax({
-            url: '/getOrganization',
+            url: '/admin/getTerminalGroup',
             method: 'GET',
-            success: function () {
-                showNotification('Токен успешно сброшен!', true);
-                // Обновляем информацию о ресторане без перезагрузки страницы
+            success: function (response) {
+                showNotification(response, true);
                 loadRestaurantInfo();
             },
-            error: function (response) {
-                console.log(response);
-                showNotification(response.responseText, false);
+            error: function (xhr) {
+                const errorMsg = xhr.responseText || 'Произошла неизвестная ошибка.';
+                showNotification(errorMsg, false);
+                console.error("Ошибка при запросе терминальных групп:", errorMsg);
             }
         });
     });
+
 });
 
 

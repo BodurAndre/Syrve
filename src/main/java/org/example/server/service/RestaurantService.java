@@ -34,6 +34,10 @@ public class RestaurantService {
         return restaurantRepository.findAll().stream().findFirst().orElseThrow(); // Если ничего не найдено, кидаем исключение
     }
 
+    public List<TerminalGroup> getInfoTerminalGroup() {
+        return terminalRepository.findAll();
+    }
+
     public void updateApiLogin(String newApiLogin, String emailRestaurant, String phoneRestaurant, String addressRestaurant, String sectorRestaurant) {
         try {
             // Пытаемся получить существующую запись о ресторане
@@ -103,6 +107,8 @@ public class RestaurantService {
 
     public void saveTerminalGroupFromJson(JsonNode terminalGroupFromJson) {
         System.out.println(terminalGroupFromJson);
+        terminalRepository.deleteAll();
+        System.out.println("Старые терминальные группы удалены.");
         saveTerminalGroups(terminalGroupFromJson.get("terminalGroups"), true);
 
         // Обработка терминальных групп в спящем режиме
@@ -110,18 +116,20 @@ public class RestaurantService {
     }
 
     private void saveTerminalGroups(JsonNode terminalGroupsNode, boolean isActive) {
-        System.out.println("True");
         if (terminalGroupsNode == null || !terminalGroupsNode.isArray()) {
-            return; // Выходим, если данные отсутствуют или не в виде массива
+            return; // Нет данных — выходим
         }
-        System.out.println("Обработка");
+
+        // Удаляем все старые терминальные группы
+
+
+        // Сохраняем новые
         for (JsonNode terminalGroup : terminalGroupsNode) {
             for (JsonNode item : terminalGroup.get("items")) {
-                // Получаем информацию о ресторане по organizationId
                 String organizationId = item.get("organizationId").asText();
                 RestaurantInfo restaurantInfo = getRestaurantById(organizationId);
 
-                TerminalGroup terminalGroupItem = new TerminalGroup(
+                TerminalGroup newGroup = new TerminalGroup(
                         restaurantInfo,
                         item.get("id").asText(),
                         item.get("name").asText(),
@@ -129,10 +137,12 @@ public class RestaurantService {
                         item.get("timeZone").asText(),
                         isActive
                 );
-                terminalRepository.save(terminalGroupItem);
-                System.out.println(terminalGroupItem.getIdRestaurant());
+
+                terminalRepository.save(newGroup);
+                System.out.println("Сохранена терминальная группа: " + newGroup.getTerminalId());
             }
         }
     }
+
 }
 

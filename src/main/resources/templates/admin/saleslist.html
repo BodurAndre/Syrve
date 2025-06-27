@@ -25,6 +25,7 @@
 <link rel="stylesheet" href="/assets/plugins/fontawesome/css/all.min.css">
 
 <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="/assets/css/modalWindow.css">
 </head>
 <body>
 <div id="global-loader">
@@ -361,7 +362,6 @@
 </div>
 </div>
 
-
 <div class="modal fade" id="showpayment" tabindex="-1" aria-labelledby="showpayment" aria-hidden="true">
 <div class="modal-dialog modal-lg modal-dialog-centered">
 <div class="modal-content">
@@ -536,6 +536,24 @@
 </div>
 </div>
 </div>
+
+<!-- Modal -->
+<div id="orderModal" class="modal-overlay">
+    <div class="modal-content">
+        <h2>Send order to restaurant</h2>
+        <p>You won't be able to revert this!</p>
+
+        <select id="orderOptions">
+
+        </select>
+
+        <div class="modal-buttons">
+            <button class="confirm-btn" id="confirmCheckout">Checkout</button>
+            <button class="cancel-btn" id="cancelCheckout">Cancel</button>
+        </div>
+    </div>
+</div>
+
 
 
 <script src="/assets/js/jquery-3.6.0.min.js"></script>

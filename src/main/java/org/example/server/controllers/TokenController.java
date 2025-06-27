@@ -41,7 +41,6 @@ public class TokenController {
 
     private int requestAttempts = 0;
 
-    String terminalTestGroupId = "09f24a8d-a290-493d-9b36-41683dca09a5";
 
     private final ProductService productService;
     private final DishModifierRepository dishModifierRepository;
@@ -273,77 +272,107 @@ public class TokenController {
     }
 
     @GetMapping("/admin/getTerminalGroup")
-    public String TerminalGroup(Model model) {
+    public ResponseEntity<String> TerminalGroup() {
         if (apiLoginNotFound) {
             log.warn("API login not found or incorrect.");
-            model.addAttribute("Error", "Не введен логин или он не верный");
             apiLoginNotFound = false;
-            return "test/tokenResult";
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Не введен логин или он не верный");
         }
 
         String idRestaurant;
         try {
             idRestaurant = restaurantService.getIdRestaurant();
         } catch (NoSuchElementException e) {
-            getOrganization(); // Initialize idRestaurant if not found
+            getOrganization(); // Пытаемся получить ID заново
             requestAttempts++;
-            return "redirect:/admin/getTerminalGroup";
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body("ID ресторана не найден. Повторите запрос.");
         }
 
         if (idRestaurant == null || idRestaurant.isEmpty()) {
-            getOrganization(); // Initialize idRestaurant if not found
+            getOrganization(); // Пытаемся получить ID заново
             requestAttempts++;
-            return "redirect:/admin/getTerminalGroup";
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body("ID ресторана пустой. Повторите запрос.");
         }
 
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("Authorization", "Bearer " + token);
 
-        String requestBody = "{\"organizationIds\": [\"" + idRestaurant + "\"]," + "\"includeDisabled\": true" + "}";
+        String requestBody = "{\"organizationIds\": [\"" + idRestaurant + "\"],\"includeDisabled\": true}";
         HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
 
         try {
             ResponseEntity<String> responseEntity = restTemplate.exchange(
-                    API_SELECT+TERMINAL_URL,
+                    API_SELECT + TERMINAL_URL,
                     HttpMethod.POST,
                     requestEntity,
                     String.class
             );
 
-            model.addAttribute("body", responseEntity.getBody());
-            requestAttempts = 0;
             JsonNode terminalGroup = mapper.readTree(responseEntity.getBody());
             restaurantService.saveTerminalGroupFromJson(terminalGroup);
+            requestAttempts = 0;
+
+            return ResponseEntity.ok("Терминальные группы успешно сохранены!");
 
         } catch (HttpClientErrorException e) {
-            if (e.getRawStatusCode() == 401 && requestAttempts<10) {
-                getToken();
-                requestAttempts++;
-                return "redirect:/admin/getTerminalGroup";
+            if (e.getRawStatusCode() == 401 && requestAttempts < 10) {
+                getToken(); // Обновляем токен
+
+                // Повторяем запрос с новым токеном
+                headers.set("Authorization", "Bearer " + token);
+                HttpEntity<String> newRequestEntity = new HttpEntity<>(requestBody, headers);
+                try {
+                    ResponseEntity<String> retryResponse = restTemplate.exchange(
+                            API_SELECT + TERMINAL_URL,
+                            HttpMethod.POST,
+                            newRequestEntity,
+                            String.class
+                    );
+
+                    JsonNode terminalGroup = mapper.readTree(retryResponse.getBody());
+                    restaurantService.saveTerminalGroupFromJson(terminalGroup);
+                    requestAttempts = 0;
+
+                    return ResponseEntity.ok("Терминальные группы успешно сохранены!");
+                } catch (Exception ex) {
+                    log.error("Ошибка после обновления токена: {}", ex.getMessage());
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                            .body("Ошибка после повторной авторизации.");
+                }
             }
-            if (e.getRawStatusCode() == 400 && requestAttempts<10) {
+
+            if (e.getRawStatusCode() == 400 && requestAttempts < 10) {
                 getOrganization();
                 requestAttempts++;
-                return "redirect:/admin/getTerminalGroup";
-            } else {
-                model.addAttribute("Error", "Ошибка при сохранении терминала: " + e.getMessage() + "Код ошибки" + e.getRawStatusCode()) ;
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("Некорректный запрос. Повторная попытка получения данных...");
             }
-        } catch (JsonMappingException e) {
-            throw new RuntimeException(e);
+
+            log.error("Ошибка при получении терминала: {}", e.getMessage());
+            return ResponseEntity.status(e.getStatusCode())
+                    .body("Ошибка при сохранении терминала: " + e.getMessage());
+
         } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+            log.error("Ошибка при обработке JSON: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Ошибка обработки ответа от сервера.");
         }
-        return "test/tokenResult";
     }
 
 
+
     @PostMapping("/ordering")
-    public ResponseEntity<String> processOrder(@RequestBody String orderId) {
+    public ResponseEntity<String> processOrder(@RequestBody JsonNode json) {
+        String orderId = json.get("orderId").asText();
+        String restaurantId = json.get("restaurantId").asText();
         log.info("Received order ID: {}", orderId);
 
         try {
             // Асинхронный вызов для обработки заказа
-            CompletableFuture<String> orderProcessing = processOrderAsync(orderId);
+            CompletableFuture<String> orderProcessing = processOrderAsync(orderId, restaurantId);
 
             // Ожидание результата асинхронной операции
             String result = orderProcessing.join();  // или orderProcessing.get(), если нужно обработать исключение
@@ -359,7 +388,7 @@ public class TokenController {
 
 
     @Async
-    public CompletableFuture<String> processOrderAsync(String orderId) {
+    public CompletableFuture<String> processOrderAsync(String orderId, String terminalGroupId) {
         try {
             // Получение заказа
             Order order = orderService.getOrder(orderId);
@@ -378,7 +407,7 @@ public class TokenController {
             }
 
             // Создание и отправка заказа
-            OrderRequest orderRequest = createOrderRequest(order.getJson(), restaurantId);
+            OrderRequest orderRequest = createOrderRequest(order.getJson(), restaurantId, terminalGroupId);
             log.info("Отправка заказ: " + order.getJson());
             JsonNode orderResponse = processOrderWithRetries(orderRequest);
             if (orderResponse == null) {
@@ -392,7 +421,7 @@ public class TokenController {
             String correlationId = orderResponse.get("correlationId").asText();
 
             //Проверка статуса терминала
-            if(checkTerminalStatus(restaurantId)) {
+            if(checkTerminalStatus(restaurantId, terminalGroupId)) {
                 // Проверка статуса заказа
                 String orderStatus = checkOrderStatus(correlationId, restaurantId);
                 if ("Success".equals(orderStatus)) {
@@ -427,10 +456,10 @@ public class TokenController {
         }
     }
 
-    private OrderRequest createOrderRequest(String json, String restaurantId) throws Exception {
+    private OrderRequest createOrderRequest(String json, String restaurantId, String terminalGroupId) throws Exception {
         OrderRequest orderRequest = new OrderRequest();
         orderRequest.organizationId = restaurantId;
-        orderRequest.terminalGroupId = terminalTestGroupId;
+        orderRequest.terminalGroupId = terminalGroupId;
         orderRequest.createOrderSettings = new OrderRequest.CreateOrderSettings();
         orderRequest.order = new ObjectMapper().readTree(json);
         return orderRequest;
@@ -460,12 +489,12 @@ public class TokenController {
         return null;
     }
 
-    private boolean checkTerminalStatus(String restaurantId) {
+    private boolean checkTerminalStatus(String restaurantId,String terminalGroupId) {
         try {
             HttpHeaders headers = createHeaders();
             String requestBody = String.format(
                     "{\"organizationId\": \"%s\", \"terminalGroupIds\": [\"%s\"]}",
-                    restaurantId, terminalTestGroupId
+                    restaurantId, terminalGroupId
             );
 
             ResponseEntity<String> responseEntity = restTemplate.exchange(
@@ -539,7 +568,7 @@ public class TokenController {
             log.warn("Unauthorized (401). Refreshing token...");
             getToken();
         } else if (statusCode == 400) {
-            log.warn("Bad Request (400). Refreshing organization data...");
+            log.warn("Bad Request (400). Refreshing organization data...Possibly the API is blocked");
             getOrganization();
         } else {
             log.error("HTTP error: {}", e.getMessage());

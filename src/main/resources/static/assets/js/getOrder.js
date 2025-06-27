@@ -118,6 +118,39 @@ $(document).ready(function () {
 
     loadCitiesWithStreets();
 
+    function loadRestaurantInfo() {
+        $.ajax({
+            url: '/admin/viewRestaurant',
+            method: 'GET',
+            success: function (data) {
+                console.log(data);
+                const select = $('#orderOptions');
+                select.empty(); // очищаем старые опции
+
+                // Добавляем дефолтный option
+                select.append('<option value="" disabled selected>Select restaurant</option>');
+
+                if (Array.isArray(data)) {
+                    data.forEach(terminal => {
+                        const option = $('<option>', {
+                            value: terminal.terminalId, // или terminal.terminalId, если тебе нужен именно он
+                            text: terminal.nameRestaurant + ' - ' + terminal.address
+                        });
+                        select.append(option);
+                    });
+                } else {
+                    showNotification('Данные о терминалах не найдены.', false);
+                }
+            },
+            error: function () {
+                showNotification('Ошибка при загрузке информации о ресторане.', false);
+            }
+        });
+
+    }
+
+    loadRestaurantInfo();
+
     if (isModel) {
         showNotification(
             statusResponse ? 'Города и улицы успешно обновлены' : 'Произошла ошибка при обновлении данных',
@@ -125,49 +158,63 @@ $(document).ready(function () {
         );
     }
 
+
+    let selectedOrderId = null;
+
     $(document).on('click', '.setOrder', function () {
-        // Изменяем статус заказа
+        selectedOrderId = $(this).data('id');
+        $('#orderModal').addClass('show').fadeIn();
+    });
+
+    $('#cancelCheckout').on('click', function () {
+        $('#orderModal').removeClass('show').fadeOut();
+    });
+
+
+    $('#confirmCheckout').on('click', function () {
+        const restaurantId = $('#orderOptions').val();
+        if (!restaurantId) {
+            alert('Пожалуйста, выберите ресторан!');
+            return;
+        }
+        console.log("restaurantId - " + restaurantId);
+        console.log("selectedOrderId - " + orderId);
+        //Сначала обновим статус
         $.ajax({
             url: '/admin/editStatus',
             method: 'POST',
             contentType: 'application/json',
-            data: orderId,
+            data: `${orderId}`,
             success: function () {
-                console.log('Статус успешно изменен.');
-                // После изменения статуса отправляем второй запрос
+                loadCitiesWithStreets();
+                $('#orderModal').removeClass('show').fadeOut();
+                // Потом отправим заказ с ID ресторана
                 $.ajax({
-
                     url: '/ordering',
                     method: 'POST',
                     contentType: 'application/json',
-                    data: orderId,
+                    data: JSON.stringify({
+                        orderId: String(orderId),
+                        restaurantId: String(restaurantId)
+                    }), // передаём restaurantId
                     success: function (response) {
-                        console.log('Заказ успешно обработан:', response);
-                        showNotification('Операция успешно завершена.', true);
-
-                        // После успешного выполнения второго запроса обновляем страницу
-                        setTimeout(() => {
-                            location.reload();
-                        }, 2000); // Даем пользователю немного времени увидеть уведомление
+                        console.log(response);
+                        showNotification('Заказ отправлен в ресторан', true);
+                        $('#orderModal').removeClass('show').fadeOut();
+                        loadCitiesWithStreets();
                     },
                     error: function (response) {
-                        console.error('Ошибка при обработке заказа:', response);
-                        showNotification(
-                            `Заказ ID ${orderId} не обработан, причина: ${response.responseText}`,
-                            false
-                        );
-                        setTimeout(() => {
-                            location.reload();
-                        }, 2000);
+                        console.error('Ошибка:', response);
+                        showNotification("Заказ ID " + selectedOrderId + " не отправлен: " + response.responseText, false);
+                        $('#orderModal').removeClass('show').fadeOut();
+                        loadCitiesWithStreets();
                     }
                 });
             },
             error: function (response) {
-                console.error('Ошибка при изменении статуса заказа:', response);
-                showNotification(
-                    `Ошибка в изменении статуса: ${response.responseText}`,
-                    false
-                );
+                showNotification("Ошибка при изменении статуса: " + response.responseText, false);
+                $('#orderModal').removeClass('show').fadeOut();
+                loadCitiesWithStreets();
             }
         });
     });

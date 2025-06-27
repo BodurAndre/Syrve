@@ -1,0 +1,60 @@
+.modal-overlay {
+    visibility: hidden; /* Скрыть окно, но оставить его в потоке */
+    display: flex; /* Убедитесь, что мы используем flexbox для центрирования */
+    justify-content: center; /* Горизонтальное центрирование */
+    align-items: center; /* Вертикальное центрирование */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 10000;
+    opacity: 0; /* Начальная невидимость */
+    transition: opacity 0.3s, visibility 0s 0.3s; /* Плавный переход */
+}
+
+.modal-overlay.show {
+    visibility: visible; /* Показываем окно */
+    opacity: 1; /* Окно становится видимым */
+    transition: opacity 0.3s; /* Плавный переход только для видимости */
+}
+
+
+.modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.modal-content h2 {
+    margin-bottom: 10px;
+    font-size: 20px;
+}
+
+.modal-buttons {
+    margin-top: 20px;
+}
+
+.confirm-btn {
+    background-color: orange;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    margin-right: 10px;
+    cursor: pointer;
+}
+
+.cancel-btn {
+    background-color: crimson;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}

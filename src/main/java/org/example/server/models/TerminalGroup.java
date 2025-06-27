@@ -33,8 +33,8 @@ public class TerminalGroup {
     @Column(name = "time_Zone")
     private String timeZone;
 
-    @Column(name = "Sleep")
-    private boolean sleep;
+    @Column(name = "active")
+    private boolean isActive;
 
     public TerminalGroup(RestaurantInfo idRestaurant, String terminalId, String nameRestaurant, String address, String timeZone, boolean sleep) {
         this.idRestaurant = idRestaurant;
@@ -42,6 +42,6 @@ public class TerminalGroup {
         this.nameRestaurant = nameRestaurant;
         this.address = address;
         this.timeZone = timeZone;
-        this.sleep = sleep;
+        this.isActive = sleep;
     }
 }
