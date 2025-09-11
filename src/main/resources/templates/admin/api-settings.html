@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0">
+<meta name="description" content="API Settings">
+<meta name="keywords" content="admin, api, settings, syrve">
+<meta name="author" content="Syrve Admin">
+<meta name="robots" content="noindex, nofollow">
+<title>API Settings - Syrve Admin</title>
+
+<link rel="shortcut icon" type="image/x-icon" href="assets/img/favicon.jpg">
+<link rel="stylesheet" href="assets/css/bootstrap.min.css">
+<link rel="stylesheet" href="assets/css/animate.css">
+<link rel="stylesheet" href="assets/css/dataTables.bootstrap4.min.css">
+<link rel="stylesheet" href="assets/plugins/fontawesome/css/fontawesome.min.css">
+<link rel="stylesheet" href="assets/plugins/fontawesome/css/all.min.css">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<div id="global-loader">
+<div class="whirly-loader"> </div>
+</div>
+
+<div class="main-wrapper">
+
+<div class="header">
+<div class="header-left active">
+<a href="/admin/dashboard" class="logo">
+<img src="assets/img/logo.png" alt="">
+</a>
+<a href="/admin/dashboard" class="logo-small">
+<img src="assets/img/logo-small.png" alt="">
+</a>
+<a id="toggle_btn" href="javascript:void(0);">
+</a>
+</div>
+
+<a id="mobile_btn" class="mobile_btn" href="#sidebar">
+<span class="bar-icon">
+<span></span>
+<span></span>
+<span></span>
+</span>
+</a>
+
+<ul class="nav user-menu">
+<li class="nav-item dropdown">
+<a href="javascript:void(0);" class="dropdown-toggle nav-link" data-bs-toggle="dropdown">
+<img src="assets/img/icons/notification-bing.svg" alt="img"> <span class="badge rounded-pill" id="notification-counter">0</span>
+</a>
+<div class="dropdown-menu notifications">
+<div class="topnav-dropdown-header">
+<span class="notification-title">Уведомления</span>
+<a href="javascript:void(0)" class="clear-noti" onclick="clearAllNotifications()"> Очистить все </a>
+</div>
+<div class="noti-content">
+<ul class="notification-list" id="notification-list">
+<li class="notification-message">
+<div class="text-center text-muted">
+<small>Нет новых уведомлений</small>
+</div>
+</li>
+</ul>
+</div>
+<div class="topnav-dropdown-footer">
+<a href="/admin/api/orders-page">Просмотреть все заказы</a>
+</div>
+</div>
+</li>
+<li class="nav-item dropdown has-arrow main-drop">
+<a href="javascript:void(0);" class="dropdown-toggle nav-link userset" data-bs-toggle="dropdown">
+<span class="user-img"><img src="assets/img/profiles/avatar-02.jpg" alt="">
+<span class="status online"></span></span>
+</a>
+<div class="dropdown-menu menu-drop-user">
+<div class="profilename">
+<div class="profileset">
+<span class="user-img"><img src="assets/img/profiles/avatar-02.jpg" alt="">
+<span class="status online"></span></span>
+<div class="profilesets">
+<h6 id="userName">Admin User</h6>
+<h5>Administrator</h5>
+</div>
+</div>
+<hr class="m-0">
+<a class="dropdown-item" href="/admin/myProfile"> <i class="me-2" data-feather="user"></i> My Profile</a>
+<a class="dropdown-item" href="/admin/settings"> <i class="me-2" data-feather="settings"></i>Settings</a>
+<hr class="m-0">
+<a class="dropdown-item logout pb-0" href="/logout"><img src="assets/img/icons/log-out.svg" class="me-2" alt="img">Logout</a>
+</div>
+</div>
+</li>
+</ul>
+
+<div class="dropdown mobile-user-menu">
+<a href="javascript:void(0);" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>
+<div class="dropdown-menu dropdown-menu-right">
+<a class="dropdown-item" href="/admin/myProfile">My Profile</a>
+<a class="dropdown-item" href="/admin/settings">Settings</a>
+<a class="dropdown-item" href="/logout">Logout</a>
+</div>
+</div>
+</div>
+
+<div class="sidebar" id="sidebar">
+<div class="sidebar-inner slimscroll">
+<div id="sidebar-menu" class="sidebar-menu">
+<ul>
+<li>
+<a href="/admin/dashboard"><img src="assets/img/icons/dashboard.svg" alt="img"><span> Dashboard</span> </a>
+</li>
+<li class="submenu">
+<a href="#"><img src="assets/img/icons/product.svg" alt="img"><span> Products</span> <span class="menu-arrow"></span></a>
+<ul>
+<li><a href="/admin/products">Product List</a></li>
+<li><a href="/admin/products/sync">Sync Products</a></li>
+</ul>
+</li>
+<li class="submenu">
+<a href="#"><img src="assets/img/icons/sales1.svg" alt="img"><span> Orders</span> <span class="menu-arrow"></span></a>
+<ul>
+                        <li><a href="/admin/api/orders-page">All Orders</a></li>
+<li><a href="/admin/orders/pending">Pending Orders</a></li>
+<li><a href="/admin/orders/completed">Completed Orders</a></li>
+</ul>
+</li>
+<li class="submenu active">
+<a href="#"><img src="assets/img/icons/purchase1.svg" alt="img"><span> Restaurant</span> <span class="menu-arrow"></span></a>
+<ul>
+<li><a href="/admin/info">Restaurant Info</a></li>
+                        <li><a href="/admin/api/terminals-page">Terminal Groups</a></li>
+<li><a href="/admin/api-settings" class="active">API Settings</a></li>
+</ul>
+</li>
+<li class="submenu">
+<a href="#"><img src="assets/img/icons/expense1.svg" alt="img"><span> Addresses</span> <span class="menu-arrow"></span></a>
+<ul>
+<li><a href="/admin/address">Cities & Streets</a></li>
+<li><a href="/admin/address/sync">Sync Addresses</a></li>
+</ul>
+</li>
+<li class="submenu">
+<a href="#"><img src="assets/img/icons/quotation1.svg" alt="img"><span> Reports</span> <span class="menu-arrow"></span></a>
+<ul>
+<li><a href="/admin/reports/sales">Sales Report</a></li>
+<li><a href="/admin/reports/orders">Orders Report</a></li>
+<li><a href="/admin/reports/products">Products Report</a></li>
+</ul>
+</li>
+<li class="submenu">
+<a href="#"><img src="assets/img/icons/return1.svg" alt="img"><span> Settings</span> <span class="menu-arrow"></span></a>
+<ul>
+<li><a href="/admin/myProfile">Profile</a></li>
+<li><a href="/admin/users">Users</a></li>
+<li><a href="/admin/system">System Settings</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div class="page-wrapper">
+<div class="content container-fluid">
+
+<div class="page-header">
+<div class="row align-items-center">
+<div class="col">
+<h3 class="page-title">API Settings</h3>
+<ul class="breadcrumb">
+<li class="breadcrumb-item"><a href="/admin/dashboard">Dashboard</a></li>
+<li class="breadcrumb-item active">API Settings</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div class="row">
+<div class="col-md-8">
+<div class="card">
+<div class="card-header">
+<h4 class="card-title">API Configuration</h4>
+<p class="card-text">Configure your Syrve API connection settings</p>
+</div>
+<div class="card-body">
+<div class="row">
+<div class="col-md-6">
+<div class="form-group">
+<label>API Provider</label>
+<select class="form-control" id="apiProvider">
+<option value="Syrve">Syrve</option>
+<option value="IIKO">IIKO</option>
+</select>
+</div>
+</div>
+<div class="col-md-6">
+<div class="form-group">
+<label>API Login</label>
+<input type="text" class="form-control" id="apiLogin" placeholder="Enter your API login">
+</div>
+</div>
+</div>
+
+<div class="row mt-3">
+<div class="col-md-6">
+<div class="form-group">
+<label>API Base URL</label>
+<input type="text" class="form-control" id="apiBaseUrl" readonly>
+<small class="form-text text-muted">Automatically set based on provider</small>
+</div>
+</div>
+<div class="col-md-6">
+<div class="form-group">
+<label>API Version</label>
+<input type="text" class="form-control" id="apiVersion" value="1" readonly>
+</div>
+</div>
+</div>
+
+<div class="row mt-3">
+<div class="col-12">
+<div class="form-group">
+<label>Connection Settings</label>
+<div class="form-check">
+<input class="form-check-input" type="checkbox" id="autoRetry" checked>
+<label class="form-check-label" for="autoRetry">
+Auto-retry failed requests
+</label>
+</div>
+<div class="form-check">
+<input class="form-check-input" type="checkbox" id="autoRefreshToken" checked>
+<label class="form-check-label" for="autoRefreshToken">
+Auto-refresh expired tokens
+</label>
+</div>
+<div class="form-check">
+<input class="form-check-input" type="checkbox" id="logApiCalls" checked>
+<label class="form-check-label" for="logApiCalls">
+Log API calls for debugging
+</label>
+</div>
+</div>
+</div>
+</div>
+
+<div class="row mt-3">
+<div class="col-12">
+<button type="button" class="btn btn-primary" id="testConnection">
+<i class="fas fa-plug"></i> Test Connection
+</button>
+<button type="button" class="btn btn-success" id="saveSettings">
+<i class="fas fa-save"></i> Save Settings
+</button>
+<button type="button" class="btn btn-warning" id="resetToken">
+<i class="fas fa-refresh"></i> Reset Token
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="col-md-4">
+<div class="card">
+<div class="card-header">
+<h4 class="card-title">Connection Status</h4>
+</div>
+<div class="card-body">
+<div class="status-item">
+<label>API Status:</label>
+<span class="status-badge" id="apiStatus">Checking...</span>
+</div>
+<div class="status-item">
+<label>Token Status:</label>
+<span class="status-badge" id="tokenStatus">Unknown</span>
+</div>
+<div class="status-item">
+<label>Last Test:</label>
+<span id="lastTest">Never</span>
+</div>
+<div class="status-item">
+<label>Response Time:</label>
+<span id="responseTime">-</span>
+</div>
+</div>
+</div>
+
+<div class="card">
+<div class="card-header">
+<h4 class="card-title">API Endpoints</h4>
+</div>
+<div class="card-body">
+<div class="endpoint-list">
+<div class="endpoint-item">
+<strong>Token:</strong> <code>/1/access_token</code>
+</div>
+<div class="endpoint-item">
+<strong>Organizations:</strong> <code>/1/organizations</code>
+</div>
+<div class="endpoint-item">
+<strong>Products:</strong> <code>/1/nomenclature</code>
+</div>
+<div class="endpoint-item">
+<strong>Orders:</strong> <code>/1/deliveries/create</code>
+</div>
+<div class="endpoint-item">
+<strong>Terminals:</strong> <code>/1/terminal_groups</code>
+</div>
+<div class="endpoint-item">
+<strong>Addresses:</strong> <code>/1/cities</code>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="row">
+<div class="col-12">
+<div class="card">
+<div class="card-header">
+<h4 class="card-title">API Log</h4>
+</div>
+<div class="card-body">
+<div class="api-log" id="apiLog">
+<!-- API log entries will appear here -->
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+
+<script src="assets/js/jquery-3.6.0.min.js"></script>
+<script src="assets/js/feather.min.js"></script>
+<script src="assets/js/jquery.slimscroll.min.js"></script>
+<script src="assets/js/jquery.dataTables.min.js"></script>
+<script src="assets/js/dataTables.bootstrap4.min.js"></script>
+<script src="assets/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/script.js"></script>
+<script src="assets/js/api-settings.js"></script>
+<script src="assets/js/notifications.js"></script>
+<script>
+function clearAllNotifications() {
+    if (notificationManager) {
+        notificationManager.notifications = [];
+        notificationManager.updateNotificationCounter();
+        document.getElementById('notification-list').innerHTML = `
+            <li class="notification-message">
+                <div class="text-center text-muted">
+                    <small>Нет новых уведомлений</small>
+                </div>
+            </li>
+        `;
+    }
+}
+</script>
+</body>
+</html> 

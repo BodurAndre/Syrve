@@ -295,16 +295,28 @@
                         </div>
                     </div>
 
-                    <div class="col-lg-5 col-sm-6 col-12">
-                        <div class="form-group" data-select2-id="23">
-                            <label>Select sector</label>
-                            <select class="select select2-hidden-accessible" id="sectorRestaurant" data-select2-id="10" tabindex="-1" aria-hidden="true">
-                                <option value="IIKO" data-select2-id="12">IIKO</option>
-                                <option value="Syrve" data-select2-id="25">Syrve</option>
+                    <div class="col-lg-3 col-sm-6 col-12">
+                        <div class="form-group">
+                            <label for="typeRestaurant">Select restaurant type</label>
+                            <select class="select" id="typeRestaurant">
+                                <option value="CHAIN">CHAIN</option>
+                                <option value="RMS">RMS</option>
                             </select>
                         </div>
                     </div>
-                    <div class="col-lg-5 col-sm-6 col-12">
+
+                    <div class="col-lg-3 col-sm-6 col-12">
+                        <div class="form-group">
+                            <label for="sectorRestaurant">Select sector</label>
+                            <select class="select" id="sectorRestaurant">
+                                <option value="IIKO">IIKO</option>
+                                <option value="Syrve">Syrve</option>
+                            </select>
+                        </div>
+                    </div>
+
+
+                    <div class="col-lg-4 col-sm-6 col-12">
                         <div class="form-group">
                             <label>API Login</label>
                             <input type="text" id="apiLogin">
@@ -324,6 +336,11 @@
     </div>
 </div>
 
+<script>
+    $(document).ready(function() {
+        $('.select').select2();
+    });
+</script>
 
 <script src="/assets/js/jquery-3.6.0.min.js"></script>
 

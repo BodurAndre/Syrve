@@ -36,4 +36,7 @@ public class RestaurantInfo {
 
     @Column(name = "sector")
     private String Sector;
+
+    @Column(name = "type")
+    private String type;
 }

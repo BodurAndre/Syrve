@@ -14,10 +14,7 @@ import org.example.server.models.products.DishWithModifiers;
 import org.example.server.models.products.Product;
 import org.example.server.repositories.DishModifierRepository;
 import org.example.server.repositories.DishRepository;
-import org.example.server.service.AdressService;
-import org.example.server.service.OrderService;
-import org.example.server.service.ProductService;
-import org.example.server.service.RestaurantService;
+import org.example.server.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.scheduling.annotation.Async;
@@ -47,14 +44,16 @@ public class TokenController {
     private final RestaurantService restaurantService;
     private final AdressService adressService;
     private final OrderService orderService;
+    private final NotificationService notificationService;
 
-    public TokenController(ProductService productService, DishModifierRepository dishModifierRepository, RestaurantService restaurantService, AdressService adressService, OrderService orderService, OrderController orderController) {
+    public TokenController(ProductService productService, DishModifierRepository dishModifierRepository, RestaurantService restaurantService, AdressService adressService, OrderService orderService, OrderController orderController, NotificationService notificationService) {
         this.productService = productService;
         this.dishModifierRepository = dishModifierRepository;
         this.restaurantService = restaurantService;
         this.adressService = adressService;
         this.orderService = orderService;
         this.orderController = orderController;
+        this.notificationService = notificationService;
     }
 
     private static final String API_IIKO = "https://api-ru.iiko.services/api/";
@@ -392,6 +391,10 @@ public class TokenController {
         try {
             // Получение заказа
             Order order = orderService.getOrder(orderId);
+            
+            // Отправляем уведомление о новом заказе
+            String customerName = order.getCustomer() != null ? order.getCustomer().getName() : "Неизвестный клиент";
+            notificationService.sendNewOrderNotification(orderId, customerName, order.getTotalPrice());
 
             if (apiLoginNotFound) {
                 log.warn("API login not found or incorrect.");
@@ -413,6 +416,7 @@ public class TokenController {
             if (orderResponse == null) {
                 log.error("Failed to process order after retries.");
                 orderService.editStatusOrder(order, "ERROR");
+                notificationService.sendOrderStatusNotification(orderId, "ERROR", "Ошибка обработки заказа после повторных попыток");
                 throw new RuntimeException("Failed to process order.");
             }
 
@@ -426,15 +430,18 @@ public class TokenController {
                 String orderStatus = checkOrderStatus(correlationId, restaurantId);
                 if ("Success".equals(orderStatus)) {
                     orderService.editStatusOrder(order, "Completed");
+                    notificationService.sendOrderStatusNotification(orderId, "Completed", "Заказ успешно выполнен");
                     log.info("Order successfully completed.");
                     return CompletableFuture.completedFuture("Order successfully completed.");
                 } else if ("Error".equals(orderStatus)) {
                     orderService.editStatusOrder(order, "ERROR");
+                    notificationService.sendOrderStatusNotification(orderId, "ERROR", "Не возможно доставить заказ");
                     throw new IllegalStateException("Не возможно доставить заказ");
                 }
             }
             else {
                 orderService.editStatusOrder(order, "ERROR");
+                notificationService.sendOrderStatusNotification(orderId, "ERROR", "Касса не доступна");
                 throw new IllegalStateException("Касса не доступна");
             }
 

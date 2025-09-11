@@ -52,13 +52,14 @@ public class AdminController {
             @RequestParam(value = "emailRestaurant", required = false) String emailRestaurant,
             @RequestParam(value = "phoneRestaurant", required = false) String phoneRestaurant,
             @RequestParam(value = "addressRestaurant", required = false) String addressRestaurant,
-            @RequestParam(value = "sectorRestaurant", required = false) String sectorRestaurant) {
+            @RequestParam(value = "sectorRestaurant", required = false) String sectorRestaurant,
+            @RequestParam(value = "typeRestaurant", required = false) String typeRestaurant) {
 
         if (newApiLogin == null || newApiLogin.trim().isEmpty()) {
             return ResponseEntity.badRequest().body("API Login не может быть пустым.");
         }
 
-        restaurantService.updateApiLogin(newApiLogin, emailRestaurant, phoneRestaurant, addressRestaurant, sectorRestaurant);
+        restaurantService.updateApiLogin(newApiLogin, emailRestaurant, phoneRestaurant, addressRestaurant, sectorRestaurant, typeRestaurant);
         return ResponseEntity.ok("Данные успешно обновлены.");
     }
 
@@ -96,6 +97,7 @@ public class AdminController {
             response.put("phoneRestaurant", restaurantInfo.getPhoneRestaurant());
             response.put("addressRestaurant", restaurantInfo.getAddressRestaurant());
             response.put("sectorRestaurant", restaurantInfo.getSector());
+            response.put("typeRestaurant", restaurantInfo.getType());
             return ResponseEntity.ok(response);
         } catch (NoSuchElementException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -168,6 +170,11 @@ public class AdminController {
 
     // Простые запросы
 
+    @GetMapping(value = "/admin/dashboard")
+    public String dashboard(){
+        return "admin/dashboard";
+    }
+
     @GetMapping(value = "/admin/info")
     public String home(){
         return "/admin/restaurant-info";
@@ -180,7 +187,7 @@ public class AdminController {
 
     @GetMapping("/admin/orders")
     public String orderStatus() {
-        return "test/OrderStatus";
+        return "admin/orders-enhanced";
     }
 
     @GetMapping("/admin/address")

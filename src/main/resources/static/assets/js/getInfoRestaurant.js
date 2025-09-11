@@ -14,6 +14,7 @@ $(document).ready(function () {
                     $('#phoneCompany').val(data.phoneRestaurant || '');
                     $('#emailCompany').val(data.emailRestaurant || '');
                     $('#sectorRestaurant').val(data.sectorRestaurant || '').trigger('change');
+                    $('#typeRestaurant').val(data.typeRestaurant || '').trigger('change');
                     $('.restaurant-name').val(data.nameRestaurant || '');
                 }
             },
@@ -87,6 +88,7 @@ $(document).ready(function () {
         const phoneCompany = $('#phoneCompany').val();
         const addressRestaurant = $('#addressRestaurant').val();
         const sectorRestaurant = $('#sectorRestaurant').val();
+        const typeRestaurant = $('#typeRestaurant').val();
 
         if (!newApiLogin) {
             showNotification('Поле API Login не может быть пустым', false);
@@ -101,7 +103,8 @@ $(document).ready(function () {
                     emailRestaurant: emailCompany,
                     phoneRestaurant: phoneCompany,
                     addressRestaurant: addressRestaurant,
-                    sectorRestaurant: sectorRestaurant}, // Отправляем данные
+                    sectorRestaurant: sectorRestaurant,
+            typeRestaurant: typeRestaurant},// Отправляем данные
             success: function () {
                 $.ajax({
                     url: '/admin/resetToken',

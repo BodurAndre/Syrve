@@ -38,7 +38,7 @@ public class RestaurantService {
         return terminalRepository.findAll();
     }
 
-    public void updateApiLogin(String newApiLogin, String emailRestaurant, String phoneRestaurant, String addressRestaurant, String sectorRestaurant) {
+    public void updateApiLogin(String newApiLogin, String emailRestaurant, String phoneRestaurant, String addressRestaurant, String sectorRestaurant, String typeRestaurant) {
         try {
             // Пытаемся получить существующую запись о ресторане
             RestaurantInfo restaurantInfo = getInfoRestaurant();
@@ -47,6 +47,7 @@ public class RestaurantService {
                 restaurantInfo.setPhoneRestaurant(phoneRestaurant);
                 restaurantInfo.setAddressRestaurant(addressRestaurant);
                 restaurantInfo.setSector(sectorRestaurant);
+                restaurantInfo.setType(typeRestaurant);
                 restaurantRepository.save(restaurantInfo);
             }
             else{
@@ -55,6 +56,7 @@ public class RestaurantService {
                 restaurantInfo.setPhoneRestaurant(phoneRestaurant);
                 restaurantInfo.setAddressRestaurant(addressRestaurant);
                 restaurantInfo.setSector(sectorRestaurant);
+                restaurantInfo.setType(typeRestaurant);
                 restaurantInfo.setNameRestaurant(null);
                 restaurantInfo.setIdRestaurant(null);
                 restaurantRepository.save(restaurantInfo);
@@ -68,6 +70,7 @@ public class RestaurantService {
             newRestaurant.setPhoneRestaurant(phoneRestaurant);
             newRestaurant.setAddressRestaurant(addressRestaurant);
             newRestaurant.setSector(sectorRestaurant);
+            newRestaurant.setType(typeRestaurant);
             restaurantRepository.save(newRestaurant);
         }
     }

@@ -237,6 +237,11 @@ public class OrderService {
         return OrderRepository.findOrdersById(id);
     }
 
+    @Transactional
+    public List<Order> getAllOrders() {
+        return OrderRepository.findAll();
+    }
+
 
 
 

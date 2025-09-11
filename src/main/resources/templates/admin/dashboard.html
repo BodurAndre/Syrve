@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0">
+<meta name="description" content="Syrve Admin Dashboard">
+<meta name="keywords" content="admin, dashboard, syrve, restaurant">
+<meta name="author" content="Syrve Admin">
+<meta name="robots" content="noindex, nofollow">
+<title>Syrve Admin Dashboard</title>
+
+<link rel="shortcut icon" type="image/x-icon" href="assets/img/favicon.jpg">
+<link rel="stylesheet" href="assets/css/bootstrap.min.css">
+<link rel="stylesheet" href="assets/css/animate.css">
+<link rel="stylesheet" href="assets/css/dataTables.bootstrap4.min.css">
+<link rel="stylesheet" href="assets/plugins/fontawesome/css/fontawesome.min.css">
+<link rel="stylesheet" href="assets/plugins/fontawesome/css/all.min.css">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<div id="global-loader">
+<div class="whirly-loader"> </div>
+</div>
+
+<div class="main-wrapper">
+
+<div class="header">
+<div class="header-left active">
+<a href="/admin/dashboard" class="logo">
+<img src="assets/img/logo.png" alt="">
+</a>
+<a href="/admin/dashboard" class="logo-small">
+<img src="assets/img/logo-small.png" alt="">
+</a>
+<a id="toggle_btn" href="javascript:void(0);">
+</a>
+</div>
+
+<a id="mobile_btn" class="mobile_btn" href="#sidebar">
+<span class="bar-icon">
+<span></span>
+<span></span>
+<span></span>
+</span>
+</a>
+
+<ul class="nav user-menu">
+<li class="nav-item">
+<div class="top-nav-search">
+<a href="javascript:void(0);" class="responsive-search">
+<i class="fa fa-search"></i>
+</a>
+<form action="#">
+<div class="searchinputs">
+<input type="text" placeholder="Search Here ...">
+<div class="search-addon">
+<span><img src="assets/img/icons/closes.svg" alt="img"></span>
+</div>
+</div>
+<a class="btn" id="searchdiv"><img src="assets/img/icons/search.svg" alt="img"></a>
+</form>
+</div>
+</li>
+
+<li class="nav-item dropdown">
+<a href="javascript:void(0);" class="dropdown-toggle nav-link" data-bs-toggle="dropdown">
+<img src="assets/img/icons/notification-bing.svg" alt="img"> <span class="badge rounded-pill" id="notification-counter">0</span>
+</a>
+<div class="dropdown-menu notifications">
+<div class="topnav-dropdown-header">
+<span class="notification-title">Уведомления</span>
+<a href="javascript:void(0)" class="clear-noti" onclick="clearAllNotifications()"> Очистить все </a>
+</div>
+<div class="noti-content">
+<ul class="notification-list" id="notification-list">
+<li class="notification-message">
+<div class="text-center text-muted">
+<small>Нет новых уведомлений</small>
+</div>
+</li>
+</ul>
+</div>
+<div class="topnav-dropdown-footer">
+<a href="/admin/api/orders-page">Просмотреть все заказы</a>
+</div>
+</div>
+</li>
+
+<li class="nav-item dropdown has-arrow main-drop">
+<a href="javascript:void(0);" class="dropdown-toggle nav-link userset" data-bs-toggle="dropdown">
+<span class="user-img"><img src="assets/img/profiles/avatar-02.jpg" alt="">
+<span class="status online"></span></span>
+</a>
+<div class="dropdown-menu menu-drop-user">
+<div class="profilename">
+<div class="profileset">
+<span class="user-img"><img src="assets/img/profiles/avatar-02.jpg" alt="">
+<span class="status online"></span></span>
+<div class="profilesets">
+<h6 id="userName">Admin User</h6>
+<h5>Administrator</h5>
+</div>
+</div>
+<hr class="m-0">
+<a class="dropdown-item" href="/admin/myProfile"> <i class="me-2" data-feather="user"></i> My Profile</a>
+<a class="dropdown-item" href="/admin/settings"> <i class="me-2" data-feather="settings"></i>Settings</a>
+<hr class="m-0">
+<a class="dropdown-item logout pb-0" href="/logout"><img src="assets/img/icons/log-out.svg" class="me-2" alt="img">Logout</a>
+</div>
+</div>
+</li>
+</ul>
+
+<div class="dropdown mobile-user-menu">
+<a href="javascript:void(0);" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>
+<div class="dropdown-menu dropdown-menu-right">
+<a class="dropdown-item" href="/admin/myProfile">My Profile</a>
+<a class="dropdown-item" href="/admin/settings">Settings</a>
+<a class="dropdown-item" href="/logout">Logout</a>
+</div>
+</div>
+</div>
+
+<div class="sidebar" id="sidebar">
+<div class="sidebar-inner slimscroll">
+<div id="sidebar-menu" class="sidebar-menu">
+<ul>
+<li class="active">
+<a href="/admin/dashboard"><img src="assets/img/icons/dashboard.svg" alt="img"><span> Dashboard</span> </a>
+</li>
+<li class="submenu">
+<a href="#"><img src="assets/img/icons/product.svg" alt="img"><span> Products</span> <span class="menu-arrow"></span></a>
+<ul>
+<li><a href="/admin/products">Product List</a></li>
+<li><a href="/admin/products/sync">Sync Products</a></li>
+</ul>
+</li>
+<li class="submenu">
+<a href="#"><img src="assets/img/icons/sales1.svg" alt="img"><span> Orders</span> <span class="menu-arrow"></span></a>
+<ul>
+                        <li><a href="/admin/api/orders-page">All Orders</a></li>
+<li><a href="/admin/orders/pending">Pending Orders</a></li>
+<li><a href="/admin/orders/completed">Completed Orders</a></li>
+</ul>
+</li>
+<li class="submenu">
+<a href="#"><img src="assets/img/icons/purchase1.svg" alt="img"><span> Restaurant</span> <span class="menu-arrow"></span></a>
+<ul>
+<li><a href="/admin/info">Restaurant Info</a></li>
+                        <li><a href="/admin/api/terminals-page">Terminal Groups</a></li>
+                                <li><a href="/admin/api-settings">API Settings</a></li>
+                                <li><a href="/admin/api/test-notifications">Тест уведомлений</a></li>
+</ul>
+</li>
+<li class="submenu">
+<a href="#"><img src="assets/img/icons/expense1.svg" alt="img"><span> Addresses</span> <span class="menu-arrow"></span></a>
+<ul>
+<li><a href="/admin/address">Cities & Streets</a></li>
+<li><a href="/admin/address/sync">Sync Addresses</a></li>
+</ul>
+</li>
+<li class="submenu">
+<a href="#"><img src="assets/img/icons/quotation1.svg" alt="img"><span> Reports</span> <span class="menu-arrow"></span></a>
+<ul>
+<li><a href="/admin/reports/sales">Sales Report</a></li>
+<li><a href="/admin/reports/orders">Orders Report</a></li>
+<li><a href="/admin/reports/products">Products Report</a></li>
+</ul>
+</li>
+<li class="submenu">
+<a href="#"><img src="assets/img/icons/return1.svg" alt="img"><span> Settings</span> <span class="menu-arrow"></span></a>
+<ul>
+<li><a href="/admin/myProfile">Profile</a></li>
+<li><a href="/admin/users">Users</a></li>
+<li><a href="/admin/system">System Settings</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div class="page-wrapper">
+<div class="content container-fluid">
+
+<div class="page-header">
+<div class="row">
+<div class="col-sm-12">
+<h3 class="page-title">Dashboard</h3>
+<ul class="breadcrumb">
+<li class="breadcrumb-item active">Dashboard</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div class="row">
+<div class="col-xl-3 col-sm-6 col-12">
+<div class="card">
+<div class="card-body">
+<div class="dash-widget-header">
+<span class="dash-widget-icon text-primary border-primary">
+<img src="assets/img/icons/dash1.svg" alt="img">
+</span>
+<div class="dash-count">
+<h3 id="totalOrders">0</h3>
+</div>
+</div>
+<div class="dash-widget-info">
+<h6>Total Orders</h6>
+<p class="text-muted">All time</p>
+</div>
+</div>
+</div>
+</div>
+<div class="col-xl-3 col-sm-6 col-12">
+<div class="card">
+<div class="card-body">
+<div class="dash-widget-header">
+<span class="dash-widget-icon text-success">
+<img src="assets/img/icons/dash2.svg" alt="img">
+</span>
+<div class="dash-count">
+<h3 id="pendingOrders">0</h3>
+</div>
+</div>
+<div class="dash-widget-info">
+<h6>Pending Orders</h6>
+<p class="text-muted">Awaiting processing</p>
+</div>
+</div>
+</div>
+</div>
+<div class="col-xl-3 col-sm-6 col-12">
+<div class="card">
+<div class="card-body">
+<div class="dash-widget-header">
+<span class="dash-widget-icon text-danger border-danger">
+<img src="assets/img/icons/dash3.svg" alt="img">
+</span>
+<div class="dash-count">
+<h3 id="totalProducts">0</h3>
+</div>
+</div>
+<div class="dash-widget-info">
+<h6>Total Products</h6>
+<p class="text-muted">In catalog</p>
+</div>
+</div>
+</div>
+</div>
+<div class="col-xl-3 col-sm-6 col-12">
+<div class="card">
+<div class="card-body">
+<div class="dash-widget-header">
+<span class="dash-widget-icon text-warning border-warning">
+<img src="assets/img/icons/dash4.svg" alt="img">
+</span>
+<div class="dash-count">
+<h3 id="totalRevenue">₽0</h3>
+</div>
+</div>
+<div class="dash-widget-info">
+<h6>Total Revenue</h6>
+<p class="text-muted">All time</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="row">
+<div class="col-md-6 d-flex">
+<div class="card card-table flex-fill">
+<div class="card-header">
+<h4 class="card-title">Recent Orders</h4>
+</div>
+<div class="card-body">
+<div class="table-responsive">
+<table class="table table-hover table-center">
+<thead>
+<tr>
+<th>Order ID</th>
+<th>Customer</th>
+<th>Amount</th>
+<th>Status</th>
+<th>Date</th>
+</tr>
+</thead>
+<tbody id="recentOrdersTable">
+<!-- Recent orders will be loaded here -->
+</tbody>
+</table>
+</div>
+</div>
+<div class="card-footer">
+                    <a href="/admin/api/orders-page" class="btn btn-primary btn-sm">View All Orders</a>
+</div>
+</div>
+</div>
+<div class="col-md-6 d-flex">
+<div class="card card-table flex-fill">
+<div class="card-header">
+<h4 class="card-title">System Status</h4>
+</div>
+<div class="card-body">
+<div class="table-responsive">
+<table class="table table-hover table-center">
+<thead>
+<tr>
+<th>Component</th>
+<th>Status</th>
+<th>Last Update</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>API Connection</td>
+<td><span class="badges bg-lightgreen" id="apiStatus">Checking...</span></td>
+<td id="apiLastUpdate">-</td>
+</tr>
+<tr>
+<td>Database</td>
+<td><span class="badges bg-lightgreen" id="dbStatus">Online</span></td>
+<td id="dbLastUpdate">-</td>
+</tr>
+<tr>
+<td>Product Sync</td>
+<td><span class="badges bg-lightgreen" id="productSyncStatus">Up to date</span></td>
+<td id="productSyncLastUpdate">-</td>
+</tr>
+<tr>
+<td>Address Sync</td>
+<td><span class="badges bg-lightgreen" id="addressSyncStatus">Up to date</span></td>
+<td id="addressSyncLastUpdate">-</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="card-footer">
+<a href="/admin/system" class="btn btn-primary btn-sm">System Settings</a>
+</div>
+</div>
+</div>
+</div>
+
+<div class="row">
+<div class="col-md-12">
+<div class="card card-table">
+<div class="card-header">
+<h4 class="card-title">Quick Actions</h4>
+</div>
+<div class="card-body">
+<div class="row">
+<div class="col-md-3 col-sm-6">
+<div class="quick-action-card">
+<a href="/admin/products/sync" class="quick-action-link">
+<div class="quick-action-icon">
+<i class="fas fa-sync-alt"></i>
+</div>
+<h6>Sync Products</h6>
+<p>Update product catalog from Syrve</p>
+</a>
+</div>
+</div>
+<div class="col-md-3 col-sm-6">
+<div class="quick-action-card">
+<a href="/admin/address/sync" class="quick-action-link">
+<div class="quick-action-icon">
+<i class="fas fa-map-marker-alt"></i>
+</div>
+<h6>Sync Addresses</h6>
+<p>Update cities and streets</p>
+</a>
+</div>
+</div>
+<div class="col-md-3 col-sm-6">
+<div class="quick-action-card">
+                    <a href="/admin/api/terminals-page" class="quick-action-link">
+<div class="quick-action-icon">
+<i class="fas fa-cash-register"></i>
+</div>
+<h6>Terminal Groups</h6>
+<p>Manage terminal groups</p>
+</a>
+</div>
+</div>
+<div class="col-md-3 col-sm-6">
+<div class="quick-action-card">
+<a href="/admin/api-settings" class="quick-action-link">
+<div class="quick-action-icon">
+<i class="fas fa-cog"></i>
+</div>
+<h6>API Settings</h6>
+<p>Configure API connection</p>
+</a>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+
+<script src="assets/js/jquery-3.6.0.min.js"></script>
+<script src="assets/js/feather.min.js"></script>
+<script src="assets/js/jquery.slimscroll.min.js"></script>
+<script src="assets/js/jquery.dataTables.min.js"></script>
+<script src="assets/js/dataTables.bootstrap4.min.js"></script>
+<script src="assets/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/script.js"></script>
+<script src="assets/js/dashboard.js"></script>
+<script src="assets/js/notifications.js"></script>
+<script>
+function clearAllNotifications() {
+    if (notificationManager) {
+        notificationManager.notifications = [];
+        notificationManager.updateNotificationCounter();
+        document.getElementById('notification-list').innerHTML = `
+            <li class="notification-message">
+                <div class="text-center text-muted">
+                    <small>Нет новых уведомлений</small>
+                </div>
+            </li>
+        `;
+    }
+}
+</script>
+</body>
+</html> 
